@@ -255,33 +255,43 @@
 
   (function cortex() {
     var regs = D.cortex;
-    var maxT = 3.6, ticks = [1, 2, 3];
-    var W = 940, band = 220, pad = 16; // central label band
-    var cx = W / 2, half = (W - 2 * pad - band) / 2;
-    var Lc = cx - band / 2, Rc = cx + band / 2;
-    var rowH = 15, top = 26, bottom = 22;
+    var maxT = 0; // mm, with headroom so the longest bar clears the badge column
+    regs.forEach(function (r) { maxT = Math.max(maxT, r.lh.thickAvg, r.rh.thickAvg); });
+    maxT = Math.ceil(maxT * 1.12 * 10) / 10;
+    var ticks = [1, 2, 3];
+    var W = 940, L = 230, R = 92, plot = W - L - R;
+    var rowH = 32, barH = 10, top = 26, bottom = 26;
     var H = top + regs.length * rowH + bottom;
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
 
     ticks.forEach(function (t) {
-      [Lc - (t / maxT) * half, Rc + (t / maxT) * half].forEach(function (x) {
-        s.appendChild(svg("line", { x1: x, y1: top - 10, x2: x, y2: H - bottom + 4, stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
-        s.appendChild(text(x, top - 14, t + "", "axis", "middle"));
-      });
+      var x = L + (t / maxT) * plot;
+      s.appendChild(svg("line", { x1: x, y1: top - 8, x2: x, y2: H - bottom + 4, stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
+      s.appendChild(text(x, top - 12, t + "", "axis", "middle"));
     });
-    s.appendChild(text(W - pad, top - 14, "mm", "axis", "end"));
+    s.appendChild(text(L - 10, top - 12, "mm", "axis", "end"));
 
     regs.forEach(function (r, i) {
-      var by = top + i * rowH + (rowH - 10) / 2;
-      s.appendChild(text(cx, by + 9, REGION_NAMES[r.region] || r.region, "rowlabel", "middle"));
-      s.appendChild(bar(Lc, by, Math.max((r.lh.thickAvg / maxT) * (half - 4), 1), 10,
-        cssVar("--s1", "#2a78d6"), -1,
-        (REGION_NAMES[r.region] || r.region) + " · left: " + r.lh.thickAvg.toFixed(2) + " mm"));
-      s.appendChild(bar(Rc, by, Math.max((r.rh.thickAvg / maxT) * (half - 4), 1), 10,
+      var yc = top + i * rowH + (rowH - 2 * barH) / 2;
+      var name = REGION_NAMES[r.region] || r.region;
+      var norm = window.BRAIN_NORMS && window.BRAIN_NORMS.cortex &&
+                 window.BRAIN_NORMS.cortex[r.region];
+      s.appendChild(text(L - 10, yc + barH + 2, name, "rowlabel", "end"));
+      s.appendChild(bar(L - 1, yc, Math.max((r.lh.thickAvg / maxT) * plot, 1), barH,
+        cssVar("--s1", "#2a78d6"), 1,
+        name + " · left: " + r.lh.thickAvg.toFixed(2) + " mm" +
+        (norm ? " — " + pctlLabel(norm.l.pct) : "")));
+      s.appendChild(bar(L - 1, yc + barH + 1, Math.max((r.rh.thickAvg / maxT) * plot, 1), barH,
         cssVar("--s2", "#eb6834"), 1,
-        (REGION_NAMES[r.region] || r.region) + " · right: " + r.rh.thickAvg.toFixed(2) + " mm"));
+        name + " · right: " + r.rh.thickAvg.toFixed(2) + " mm" +
+        (norm ? " — " + pctlLabel(norm.r.pct) : "")));
+      if (norm) {
+        // percentile badges to the right of the row
+        s.appendChild(text(L + plot - 6, yc + barH, "L " + pctlLabel(norm.l.pct), "axis", "end"));
+        s.appendChild(text(L + plot - 6, yc + 2 * barH + 6, "R " + pctlLabel(norm.r.pct), "axis", "end"));
+      }
     });
-    s.appendChild(svg("line", { x1: Lc, y1: top - 10, x2: Lc, y2: top + regs.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
+    s.appendChild(svg("line", { x1: L - 1, y1: top - 6, x2: L - 1, y2: top + regs.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
     document.getElementById("chart-cortex").appendChild(s);
 
     addLegend("legend-cortex", [
