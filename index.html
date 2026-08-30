@@ -2,53 +2,251 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Soichi Hayashi — Brain MRI Viewer</title>
-    <link rel="stylesheet" type="text/css" href="papaya.css" />
-    <script type="text/javascript" src="papaya.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Brain — MRI Viewer &amp; FreeSurfer Report</title>
+    <script type="text/javascript" src="data/brain-data.js"></script>
     <style>
-      html,
+      :root {
+        color-scheme: light;
+        --page: #f9f9f7;
+        --surface: #fcfcfb;
+        --ink: #0b0b0b;
+        --ink-2: #52514e;
+        --muted: #898781;
+        --grid: #e1e0d9;
+        --baseline: #c3c2b7;
+        --border: rgba(11, 11, 11, 0.10);
+        --s1: #2a78d6;
+        --s2: #eb6834;
+        --s3: #1baf7a;
+        --s4: #eda100;
+        --s5: #e87ba4;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --page: #0d0d0d;
+          --surface: #1a1a19;
+          --ink: #ffffff;
+          --ink-2: #c3c2b7;
+          --muted: #898781;
+          --grid: #2c2c2a;
+          --baseline: #383835;
+          --border: rgba(255, 255, 255, 0.10);
+          --s1: #3987e5;
+          --s2: #d95926;
+          --s3: #199e70;
+          --s4: #c98500;
+          --s5: #d55181;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page: #0d0d0d;
+        --surface: #1a1a19;
+        --ink: #ffffff;
+        --ink-2: #c3c2b7;
+        --muted: #898781;
+        --grid: #2c2c2a;
+        --baseline: #383835;
+        --border: rgba(255, 255, 255, 0.10);
+        --s1: #3987e5;
+        --s2: #d95926;
+        --s3: #199e70;
+        --s4: #c98500;
+        --s5: #d55181;
+      }
+
+      * { box-sizing: border-box; }
       body {
         margin: 0;
-        padding: 0;
-        background: #000;
-        height: 100%;
+        background: var(--page);
+        color: var(--ink);
+        font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; }
+      a { color: var(--s1); }
+
+      header.masthead { margin-bottom: 26px; }
+      .masthead h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+      .masthead p { margin: 0; color: var(--ink-2); max-width: 72ch; }
+      .masthead .meta { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+
+      h2 {
+        font-size: 17px;
+        margin: 40px 0 4px;
+        letter-spacing: -0.01em;
+      }
+      .sub { color: var(--ink-2); margin: 0 0 14px; max-width: 74ch; }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
       }
 
-      .page-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 10;
-        padding: 10px 14px;
-        font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #ddd;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent);
-        pointer-events: none;
+      /* ---- KPI row ---- */
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+      .tile .label { font-size: 12.5px; color: var(--ink-2); margin-bottom: 4px; }
+      .tile .value { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+      .tile .unit { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+      .tile .note { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+      /* ---- viewer showcase ---- */
+      .viewer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+      .viewer-card iframe { display: block; width: 100%; height: 600px; border: 0; background: #000; }
+      .viewer-caption {
+        padding: 10px 16px; color: var(--ink-2); font-size: 12.5px;
+        border-top: 1px solid var(--border); background: var(--surface);
       }
 
-      .page-header a {
-        color: #9cf;
-        pointer-events: auto;
-      }
+      /* ---- charts ---- */
+      figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+      figcaption h3 { margin: 0 0 2px; font-size: 14.5px; }
+      figcaption p { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+      svg { display: block; max-width: 100%; }
+      .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12.5px; color: var(--ink-2); }
+      .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+      .legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+      svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .axis { font-size: 10.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+      .rowlabel { font-size: 11.5px; fill: var(--ink-2); }
+      .val { font-size: 10.5px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+      .seg-label { font-size: 11px; font-weight: 500; }
+      mark:hover rect.bar { filter: brightness(1.08); }
+
+      details { margin-top: 14px; }
+      summary { cursor: pointer; color: var(--s1); font-size: 13px; }
+      table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12.5px; }
+      th { text-align: left; color: var(--ink-2); font-weight: 500; border-bottom: 1px solid var(--baseline); padding: 5px 8px; }
+      td { padding: 4.5px 8px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+      td:first-child, th:first-child { font-variant-numeric: normal; }
+      th.num, td.num { text-align: right; }
+
+      .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+      .fact { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+      .fact .emoji { font-size: 20px; }
+      .fact h3 { margin: 6px 0 3px; font-size: 13.5px; }
+      .fact p { margin: 0; font-size: 12.8px; color: var(--ink-2); }
+
+      footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 12.5px; }
+      .papaya-csp-note { display: none; }
     </style>
-    <script type="text/javascript">
-      var params = [];
-      params["images"] = ["t1.nii.gz", "aparc+aseg.rgb.nii.gz"];
-      params["aparc+aseg.rgb.nii.gz"] = {
-        alpha: 0.65
-      };
-    </script>
   </head>
 
   <body>
-    <div class="page-header">
-      My T1 anatomical MRI with the FreeSurfer <code>aparc+aseg</code>
-      segmentation overlay, viewed with the
-      <a href="https://github.com/rii-mango/Papaya" target="_blank" rel="noopener">Papaya</a>
-      viewer. More about me: <a href="https://hayashi.in">hayashi.in</a>
+    <div class="wrap">
+      <header class="masthead">
+        <h1>My Brain, measured</h1>
+        <p>
+          A single T1-weighted MRI of my head, segmented end-to-end with
+          <a href="https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferWiki">FreeSurfer</a>
+          <code>recon-all</code>. Every number, chart, and table below was computed
+          from that segmentation — and the <em>Explore</em> section lets you browse
+          the scan itself, with the parcellation layered over the anatomy.
+        </p>
+        <p class="meta">Computed <span id="meta-date"></span> · FreeSurfer 8.2.0 (Docker, home server) · <a href="https://hayashi.in/projects/brain/">project writeup</a> · not clinical use</p>
+      </header>
+
+      <!-- ======== KPI row ======== -->
+      <section class="kpis" id="kpis" aria-label="Key measurements"></section>
+
+      <!-- ======== viewer ======== -->
+      <h2>Explore the scan</h2>
+      <p class="sub">
+        Synchronized axial, sagittal, and coronal views in
+        <a href="https://freesurfer.github.io/freebrowse/">FreeBrowse</a>, the FreeSurfer
+        project's web viewer (vendored here, fully offline). The colored overlay is the
+        <code>aparc+aseg</code> segmentation — 104 labeled structures — togglable and
+        adjustable from FreeBrowse's layers panel.
+      </p>
+      <div class="viewer-card">
+        <iframe src="freebrowse.html?nvd=mri-view.nvd" title="FreeBrowse viewer" loading="lazy"></iframe>
+        <div class="viewer-caption">
+          Base: defaced T1 (<code>t1.nii.gz</code>) · Overlay:
+          <code>aparc+aseg.nii.gz</code>, the FreeSurfer parcellation rendered with NiiVue's
+          <code>freesurfer</code> colormap (<code>FreeSurferColorLUT.txt</code> holds the color key).
+        </div>
+      </div>
+
+      <!-- ======== charts ======== -->
+      <h2>What the segmentation says</h2>
+      <p class="sub">
+        All volumes in this section come from the volumetric segmentation
+        (<code>aseg.stats</code>, <code>brainvol.stats</code>) and surface-based
+        parcellation (<code>*.aparc.stats</code>) produced by recon-all.
+      </p>
+
+      <figure>
+        <figcaption>
+          <h3>Composition of the segmented brain</h3>
+          <p>Approximate partition of the segmentation volume without ventricles (≈1.19 L)</p>
+        </figcaption>
+        <div id="chart-composition"></div>
+        <div class="legend" id="legend-composition"></div>
+      </figure>
+
+      <figure>
+        <figcaption>
+          <h3>Subcortical structures — left vs. right</h3>
+          <p>Volume in cm³, grouped by hemisphere</p>
+        </figcaption>
+        <div id="chart-subcortical"></div>
+        <div class="legend" id="legend-subcortical"></div>
+      </figure>
+
+      <figure>
+        <figcaption>
+          <h3>Cortical thickness by region</h3>
+          <p>Mean thickness (mm) across the 34 Desikan atlas regions, left of the axis = left hemisphere</p>
+        </figcaption>
+        <div id="chart-cortex"></div>
+        <div class="legend" id="legend-cortex"></div>
+      </figure>
+
+      <details>
+        <summary>Full cortical parcellation table (all 68 measurements)</summary>
+        <table id="cortex-table"></table>
+      </details>
+
+      <!-- ======== fun facts ======== -->
+      <h2>Field notes</h2>
+      <p class="sub">A few numbers put in human units.</p>
+      <div class="facts" id="facts"></div>
+
+      <!-- ======== methods ======== -->
+      <h2>How this was made</h2>
+      <div class="card" style="font-size: 13px; color: var(--ink-2)">
+        <p style="margin-top: 0">
+          <code>recon-all -all</code> (FreeSurfer 8.2.0, official Docker image) on the defaced
+          T1, 16 CPU threads on a home server. The pipeline skull-strips (SynthStrip), segments
+          (SynthSeg), fits white/pial surfaces, parcellates the cortex into the 34-region
+          Desikan atlas per hemisphere, and measures volumes, thickness, and surface areas.
+        </p>
+        <p style="margin-bottom: 0">
+          This page is a static file: the charts above are drawn in the browser from
+          <code>data/brain-data.js</code>, generated by
+          <code>analyze_freesurfer.py</code> from the raw <code>stats/</code> tables —
+          no server, no tracking, fully reproducible.
+          Raw stats files are in <a href="https://github.com/soichih/brain">the repository</a>
+          (analysis ran on <code>freesurfer-subjects/output/brain/stats</code>).
+        </p>
+      </div>
+
+      <footer>
+        Made with FreeBrowse + a lot of matrix multiplications ·
+        <a href="https://hayashi.in">hayashi.in</a> ·
+        <a href="https://github.com/soichih/brain">source</a> ·
+        This is a personal, non-clinical curiosity project.
+      </footer>
     </div>
-    <div class="papaya" data-params="params"></div>
+
+    <script type="text/javascript" src="charts.js"></script>
   </body>
 </html>

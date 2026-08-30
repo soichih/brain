@@ -1,26 +1,43 @@
 # brain
 
-A live viewer for my own T1-weighted anatomical brain MRI, using the
-[Papaya](https://github.com/rii-mango/Papaya) medical image viewer
-(vendored `papaya.js` / `papaya.css`, "nodicom" build, BSD-licensed —
-see [`LICENSE-PAPAYA.txt`](./LICENSE-PAPAYA.txt)).
+A self-contained report on my own brain MRI: an in-browser viewer for the scan
+(overlayed with the FreeSurfer segmentation), plus charts, tables, and notes
+computed from the [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/) `recon-all`
+analysis of the same volume.
 
 **Live:** https://soichih.github.io/brain/
 
 ## Contents
 
-- `index.html` — loads the Papaya viewer with `t1.nii.gz` and the FreeSurfer segmentation overlay
-- `papaya.js`, `papaya.css` — vendored Papaya viewer (nodicom build)
-- `t1.nii.gz` — my anatomical T1 MRI, NIfTI format
+- `index.html` — the report page: stat tiles, brain-composition bar, left/right
+  subcortical volumes, a 34-region cortical-thickness butterfly chart, a full
+  parcellation table, and the embedded viewer
+- `freebrowse.html` — [FreeBrowse](https://freesurfer.github.io/freebrowse/)
+  v2.4.7, the FreeSurfer project's web viewer (single-file serverless build,
+  vendored — the page loads no external resources)
+- `mri-view.nvd` — the FreeBrowse document shown in the viewer: `t1.nii.gz`
+  with `aparc+aseg.nii.gz` colorized by NiiVue's `freesurfer` colormap
+- `t1.nii.gz` — my anatomical T1 MRI, NIfTI format (defaced; see Note)
 - `aparc+aseg.nii.gz` — FreeSurfer `aparc+aseg` label volume (int16 label ids), NIfTI
-- `aparc+aseg.rgb.nii.gz` — the same labels, colorized with the FreeSurfer LUT into an
-  RGB NIfTI that Papaya renders directly as the overlay in `index.html`
-- `FreeSurferColorLUT.txt` — label index → structure name / color, from FreeSurfer 8.2.0
-- `convert_freesurfer.py` — the script that produced the two `aparc+aseg` NIfTIs
-  (reads a FreeSurfer subject's `mri/aparc+aseg.mgz`)
+- `aparc+aseg.rgb.nii.gz` — the same labels colorized into an RGB NIfTI
+  (precomputed alternative; not currently referenced by the page)
+- `FreeSurferColorLUT.txt` — label index → structure name / color, FreeSurfer 8.2.0
+- `data/brain-data.js` — all statistics on the page, generated from FreeSurfer stats
+- `analyze_freesurfer.py` — regenerates `data/brain-data.js` from a recon-all
+  subject's `stats/` files
+- `charts.js` — vanilla-JS/SVG renderer for the page's charts (no dependencies)
+- `papaya.js`, `papaya.css` — vendored [Papaya](https://github.com/rii-mango/Papaya)
+  viewer, the original viewer of this page; kept for reference, not currently loaded
 
-The segmentation was produced with [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/)
-8.2.0 via `recon-all -all` on the T1 above (run in Docker on my home server).
+## Reproducing
+
+```
+python3 analyze_freesurfer.py ~/freesurfer-subjects/output/brain data/brain-data.js
+```
+
+The segmentation was produced with FreeSurfer 8.2.0 `recon-all -all` (official
+Docker image) on the T1 above, on a home server. The page is fully static —
+every chart is drawn client-side from `data/brain-data.js`.
 
 ## Note
 

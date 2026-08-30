@@ -1,0 +1,19 @@
+{
+  "title": "My Brain — T1 + FreeSurfer aparc+aseg",
+  "imageOptionsArray": [
+    {
+      "url": "t1.nii.gz",
+      "name": "t1.nii.gz",
+      "colormap": "gray",
+      "visible": true,
+      "opacity": 1
+    },
+    {
+      "url": "aparc+aseg.nii.gz",
+      "name": "aparc+aseg.nii.gz",
+      "colormap": "freesurfer",
+      "visible": true,
+      "opacity": 0.6
+    }
+  ]
+}
