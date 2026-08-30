@@ -174,32 +174,19 @@
         <a href="https://freesurfer.github.io/freebrowse/">FreeBrowse</a>, the FreeSurfer
         project's web viewer (vendored here, fully offline). The colored overlay is the
         <code>aparc+aseg</code> segmentation — 104 labeled structures — togglable and
-        adjustable from FreeBrowse's layers panel.
+        adjustable from FreeBrowse's layers panel. The same scene also carries the
+        parcellated white/pial surface meshes recon-all fitted: use the tabs in the
+        panel at the right to switch between the volume layers and the surface meshes,
+        and the eye icons to toggle individual layers.
       </p>
       <div class="viewer-card">
         <iframe src="freebrowse.html?nvd=mri-view.nvd" title="FreeBrowse viewer" loading="lazy"></iframe>
         <div class="viewer-caption">
-          Base: defaced T1 (<code>t1.nii.gz</code>) · Overlay:
-          <code>aparc+aseg.nii.gz</code>, the FreeSurfer parcellation rendered with NiiVue's
-          <code>freesurfer</code> colormap (<code>FreeSurferColorLUT.txt</code> holds the color key).
-        </div>
-      </div>
-
-      <h2>Explore the surfaces</h2>
-      <p class="sub">
-        recon-all also fits triangulated surface meshes — the gray/white boundary
-        (<code>white</code>) and the outer brain surface (<code>pial</code>) — and parcels
-        them into the same 34 cortical regions. Below, both hemispheres' pial surfaces are
-        colored by parcellation; the converted meshes are self-contained files
-        (<code>*.mz3</code>) you can spin, zoom, and edit from FreeBrowse's layers panel.
-      </p>
-      <div class="viewer-card">
-        <iframe src="freebrowse.html?nvd=mri-surfaces.nvd" title="FreeBrowse surface view" loading="lazy"></iframe>
-        <div class="viewer-caption">
-          Meshes: <code>lh/rh.pial.mz3</code> (visible) and <code>lh/rh.white.mz3</code>
-          (start hidden — enable them in the layers panel), converted from FreeSurfer's
-          native surfaces with <code>convert_surfaces.py</code>; region colors come from
-          <code>aparc.annot</code>. Drag to rotate.
+          Volumes: defaced T1 (<code>t1.nii.gz</code>) + <code>aparc+aseg.nii.gz</code>
+          rendered with NiiVue's <code>freesurfer</code> colormap. Surfaces:
+          <code>lh/rh.pial.mz3</code> (visible) and <code>lh/rh.white.mz3</code> (hidden —
+          enable in the layers panel), converted from FreeSurfer's native meshes with
+          <code>convert_surfaces.py</code>; region colors come from <code>aparc.annot</code>.
         </div>
       </div>
 
@@ -227,8 +214,8 @@
             Centile bands from population reference charts
             (<a href="https://www.nature.com/articles/s41586-022-05280-y">Bethlehem et&nbsp;al., Nature 2022</a> —
             123,858 scans, 101,457 subjects), stratified for a <strong>48-year-old male</strong>.
-            The shaded band is the 2.5th–97.5th centile of the population; the darker inner band
-            is 25th–75th; the line is the population median. The dot is me.
+            Volumes in cm³. The shaded band is the 2.5th–97.5th centile of the population; the
+            darker inner band is 25th–75th; the line is the population median. The dot is me.
           </p>
         </figcaption>
         <div id="norms-story"></div>
@@ -261,11 +248,12 @@
         <figcaption>
           <h3>Subcortical structures vs. population</h3>
           <p>
-            Same reference charts as above, but per hemisphere: the bands show the
+            Volume in cm³, same reference charts as above, but per hemisphere: the bands show the
             2.5th–97.5th (outer) and 25th–75th (inner) centiles of the population
             distribution for <strong>one hemisphere</strong> of a 48-year-old male;
             the line is the population median. The dots are my left (blue) and
-            right (orange) hemispheres at age 48.
+            right (orange) hemispheres at age 48. A note on what each structure
+            does appears under its panel.
           </p>
         </figcaption>
         <div id="chart-sub-norms"></div>
@@ -342,7 +330,7 @@
           T1, 16 CPU threads on a home server. The pipeline skull-strips (SynthStrip), segments
           (SynthSeg), fits white/pial surfaces, parcellates the cortex into the 34-region
           Desikan atlas per hemisphere, and measures volumes, thickness, and surface areas.
-          The surface viewer shows those fitted meshes after conversion to the web-friendly
+          The viewer also carries those fitted meshes after conversion to the web-friendly
           MZ3 format by <code>convert_surfaces.py</code> (parcellation colors baked in).
         </p>
         <p style="margin-bottom: 0">

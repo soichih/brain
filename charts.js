@@ -172,22 +172,22 @@
   })();
 
   /* ---------------- subcortical grouped bars ---------------- */
+  /* one-line "what it does / what higher-lower volume might mean" per structure.
+     associations are from population studies — small effects, not diagnostic of anything. */
+  var SUBCORTICAL_DESC = {
+    "Thalamus": "The brain's relay hub — routes sensory and motor signals to the cortex and gates attention and sleep. Higher: often tracks overall brain size. Lower: reported in ADHD, multiple sclerosis, and normal aging.",
+    "Caudate": "Basal-ganglia structure for habit and skill learning, action selection, and linking motivation to movement. Higher: linked to goal-directed drive. Lower: reported in OCD, ADHD, and Parkinson's.",
+    "Putamen": "Basal-ganglia workhorse for initiating and smoothing movement, habit formation, and motor learning. Higher: generally follows overall size. Lower: an early radiological signature of Parkinson's disease.",
+    "Pallidum": "The basal ganglia's output gate — filters the movement commands assembled by caudate and putamen. Higher: little behavioral signal on its own. Lower: hallmark of parkinsonism and some dystonias.",
+    "Hippocampus": "Builds new long-term memories and encodes spatial maps; one of few regions that grows new neurons in adults. Higher: linked to aerobic fitness and better recall. Lower: strongly age-sensitive; shrinks in Alzheimer's and chronic stress.",
+    "Amygdala": "Tags what matters emotionally — threat, fear, reward — and stamps memories with feeling. Higher: reported with anxiety traits. Lower: associated with blunted threat responses and bipolar disorder.",
+    "Accumbens area": "Reward center where motivation becomes action — dopamine-driven wanting and reinforcement learning. Higher: tied to reward sensitivity. Lower: linked to apathy and loss of pleasure (anhedonia).",
+    "VentralDC": "Ventral diencephalon — deep midline tissue beside the hypothalamus: hormonal balance, autonomic control, feeding and sleep drives. Size differences here mostly reflect anatomy and overall brain size."
+  };
   (function subcortical() {
     var WANT = ["Thalamus", "Caudate", "Putamen", "Pallidum", "Hippocampus",
                 "Amygdala", "Accumbens area", "VentralDC"];
     var NICE = { VentralDC: "Ventral diencephalon", "Accumbens area": "Nucleus accumbens" };
-    // one-line "what it does / what higher-lower volume might mean" per structure.
-    // associations are from population studies — small effects, not diagnostic of anything.
-    var DESC = {
-      "Thalamus": "The brain's relay hub — routes sensory and motor signals to the cortex and gates attention and sleep. Higher: often tracks overall brain size. Lower: reported in ADHD, multiple sclerosis, and normal aging.",
-      "Caudate": "Basal-ganglia structure for habit and skill learning, action selection, and linking motivation to movement. Higher: linked to goal-directed drive. Lower: reported in OCD, ADHD, and Parkinson's.",
-      "Putamen": "Basal-ganglia workhorse for initiating and smoothing movement, habit formation, and motor learning. Higher: generally follows overall size. Lower: an early radiological signature of Parkinson's disease.",
-      "Pallidum": "The basal ganglia's output gate — filters the movement commands assembled by caudate and putamen. Higher: little behavioral signal on its own. Lower: hallmark of parkinsonism and some dystonias.",
-      "Hippocampus": "Builds new long-term memories and encodes spatial maps; one of few regions that grows new neurons in adults. Higher: linked to aerobic fitness and better recall. Lower: strongly age-sensitive; shrinks in Alzheimer's and chronic stress.",
-      "Amygdala": "Tags what matters emotionally — threat, fear, reward — and stamps memories with feeling. Higher: reported with anxiety traits. Lower: associated with blunted threat responses and bipolar disorder.",
-      "Accumbens area": "Reward center where motivation becomes action — dopamine-driven wanting and reinforcement learning. Higher: tied to reward sensitivity. Lower: linked to apathy and loss of pleasure (anhedonia).",
-      "VentralDC": "Ventral diencephalon — deep midline tissue beside the hypothalamus: hormonal balance, autonomic control, feeding and sleep drives. Size differences here mostly reflect anatomy and overall brain size."
-    };
     var rows = D.subcorticalPairs
       .filter(function (p) { return WANT.indexOf(p.structure) >= 0; })
       .map(function (p) { return { structure: p.structure, lh: p.lh / 1000, rh: p.rh / 1000 }; });
@@ -196,7 +196,7 @@
     max = Math.ceil(max * 1.1); // cm³, rounded up
 
     var L = 150, R = 20, plot = 900 - L - R;
-    var rowH = 46, barH = 10, top = 26, bottom = 26;
+    var rowH = 32, barH = 10, top = 26, bottom = 26;
     var W = 900, H = top + rows.length * rowH + bottom;
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
 
@@ -223,19 +223,6 @@
         // percentile badge to the right of the row
         s.appendChild(text(L + plot - 6, yc + barH, "L " + pctlLabel(norm.l.pct), "axis", "end"));
         s.appendChild(text(L + plot - 6, yc + 2 * barH + 6, "R " + pctlLabel(norm.r.pct), "axis", "end"));
-      }
-      var desc = DESC[r.structure];
-      if (desc) {
-        // wrap the description onto up to two lines below the bars
-        var words = desc.split(" "), lines = [""];
-        words.forEach(function (w) {
-          if ((lines[lines.length - 1] + " " + w).trim().length > 105) lines.push(w);
-          else lines[lines.length - 1] = (lines[lines.length - 1] + " " + w).trim();
-        });
-        lines.forEach(function (ln, li) {
-          var t = text(L, yc + 2 * barH + 12 + li * 11, ln, "rowdesc", "start");
-          s.appendChild(t);
-        });
       }
     });
     s.appendChild(svg("line", { x1: L - 1, y1: top - 6, x2: L - 1, y2: top + rows.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
@@ -441,11 +428,23 @@
       var x0 = (idx % cols) * PW, y0 = Math.floor(idx / cols) * PH;
       var n = e.norm;
       if (!n || !n.ages) return;
-      var pw = PW - M.l - M.r, ph = PH - M.t - M.b;
+      // a panel with a description grows taller on top to make room for the note
+      var descLines = [];
+      if (e.desc) {
+        var words = e.desc.split(" ");
+        descLines = [""];
+        words.forEach(function (w) {
+          if ((descLines[descLines.length - 1] + " " + w).trim().length > 78) descLines.push(w);
+          else descLines[descLines.length - 1] = (descLines[descLines.length - 1] + " " + w).trim();
+        });
+        descLines = descLines.slice(0, 3);
+      }
+      var mt = M.t + (descLines.length ? descLines.length * 11 + 8 : 0);
+      var pw = PW - M.l - M.r, ph = PH - mt - M.b;
       var ymax = Math.max.apply(null, n.hi.concat(e.users.map(function (u) { return u.v; }))) * 1.06;
       var ymin = Math.min.apply(null, n.lo.concat(e.users.map(function (u) { return u.v; }))) * 0.9;
       function X(a) { return x0 + M.l + ((a - n.ages[0]) / (n.ages[n.ages.length - 1] - n.ages[0])) * pw; }
-      function Y(v) { return y0 + M.t + ph - ((v - ymin) / (ymax - ymin)) * ph; }
+      function Y(v) { return y0 + mt + ph - ((v - ymin) / (ymax - ymin)) * ph; }
 
       function poly(aCol, bCol, fill) {
         var d = "M";
@@ -456,8 +455,11 @@
 
       s.appendChild(svg("rect", { x: x0 + 8, y: y0 + 8, width: PW - 16, height: PH - 16, rx: 8,
         fill: "none", stroke: cssVar("--border", "#ddd"), "stroke-width": 1 }));
-      s.appendChild(text(x0 + M.l, y0 + 20, e.name, "rowlabel"));
+      s.appendChild(text(x0 + M.l, y0 + 20, e.name + (e.unit ? " (" + e.unit + ")" : ""), "rowlabel"));
       s.appendChild(text(x0 + PW - M.r, y0 + 20, e.badge || "", "axis", "end"));
+      descLines.forEach(function (ln, li) {
+        s.appendChild(text(x0 + M.l, y0 + 31 + li * 11, ln, "rowdesc"));
+      });
       s.appendChild(text(x0 + M.l, y0 + PH - 8, "age " + n.ages[0] + " → " + n.ages[n.ages.length - 1], "axis"));
 
       // y gridlines (drawn under the data)
@@ -480,7 +482,7 @@
       // user dots: vertical line at their age, one dot per user
       if (e.users.length) {
         var ua = N.meta.age, ux = X(ua);
-        s.appendChild(svg("line", { x1: ux, y1: y0 + M.t, x2: ux, y2: y0 + M.t + ph,
+        s.appendChild(svg("line", { x1: ux, y1: y0 + mt, x2: ux, y2: y0 + mt + ph,
           stroke: e.users[0].color, "stroke-width": 1, "stroke-dasharray": "2 3" }));
         e.users.forEach(function (u) {
           s.appendChild(svg("circle", { cx: ux, cy: Y(u.v), r: 5, fill: u.color,
@@ -489,8 +491,9 @@
           dot.setAttribute("cx", ux); dot.setAttribute("cy", Y(u.v));
           var ti = svg("title", {});
           ti.textContent = e.name + (u.label ? " · " + u.label : "") + ": " + fmt(u.v, 1) +
-            " cm³ · " + u.pctl +
-            " · population median: " + fmt(n.median, 0) + " cm³";
+            " " + (e.unit || "cm³") + " · " + u.pctl +
+            " · population median: " + fmt(n.median, 0) + " " + (e.unit || "cm³") +
+            (e.desc ? "\n" + e.desc : "");
           dot.appendChild(ti);
           s.appendChild(dot);
         });
@@ -545,6 +548,7 @@
     centileGrid("chart-comp-norms", PANELS.map(function (p) {
       return {
         name: p.name,
+        unit: "cm³",
         badge: p.norm && p.norm.pct != null ? "you: " + pctlLabel(p.norm.pct) : "",
         norm: p.norm,
         users: p.norm && p.norm.pct != null
@@ -575,6 +579,8 @@
       if (!n || !n.ages) return;
       entries.push({
         name: NICE[k] || k,
+        unit: "cm³",
+        desc: SUBCORTICAL_DESC[k],
         badge: "you: L " + pctlLabel(n.l.pct) + " · R " + pctlLabel(n.r.pct),
         norm: n,
         users: [
@@ -583,7 +589,7 @@
         ],
       });
     });
-    centileGrid("chart-sub-norms", entries, 2, 452, 175);
+    centileGrid("chart-sub-norms", entries, 2, 452, 215);
 
     addLegend("legend-sub-norms", [
       ["2.5–97.5th centile band", cssVar("--band", "#eef0f8")],
