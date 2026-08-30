@@ -9,9 +9,18 @@ see [`LICENSE-PAPAYA.txt`](./LICENSE-PAPAYA.txt)).
 
 ## Contents
 
-- `index.html` — loads the Papaya viewer against `t1.nii.gz`
+- `index.html` — loads the Papaya viewer with `t1.nii.gz` and the FreeSurfer segmentation overlay
 - `papaya.js`, `papaya.css` — vendored Papaya viewer (nodicom build)
 - `t1.nii.gz` — my anatomical T1 MRI, NIfTI format
+- `aparc+aseg.nii.gz` — FreeSurfer `aparc+aseg` label volume (int16 label ids), NIfTI
+- `aparc+aseg.rgb.nii.gz` — the same labels, colorized with the FreeSurfer LUT into an
+  RGB NIfTI that Papaya renders directly as the overlay in `index.html`
+- `FreeSurferColorLUT.txt` — label index → structure name / color, from FreeSurfer 8.2.0
+- `convert_freesurfer.py` — the script that produced the two `aparc+aseg` NIfTIs
+  (reads a FreeSurfer subject's `mri/aparc+aseg.mgz`)
+
+The segmentation was produced with [FreeSurfer](https://surfer.nmr.mgh.harvard.edu/)
+8.2.0 via `recon-all -all` on the T1 above (run in Docker on my home server).
 
 ## Note
 

@@ -35,13 +35,17 @@
     </style>
     <script type="text/javascript">
       var params = [];
-      params["images"] = ["t1.nii.gz"];
+      params["images"] = ["t1.nii.gz", "aparc+aseg.rgb.nii.gz"];
+      params["aparc+aseg.rgb.nii.gz"] = {
+        alpha: 0.65
+      };
     </script>
   </head>
 
   <body>
     <div class="page-header">
-      My T1 anatomical MRI, viewed with the
+      My T1 anatomical MRI with the FreeSurfer <code>aparc+aseg</code>
+      segmentation overlay, viewed with the
       <a href="https://github.com/rii-mango/Papaya" target="_blank" rel="noopener">Papaya</a>
       viewer. More about me: <a href="https://hayashi.in">hayashi.in</a>
     </div>
