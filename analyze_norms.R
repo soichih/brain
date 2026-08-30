@@ -126,10 +126,17 @@ for (s in SIDES) {
   pl <- tryCatch(pct.of(f, s$lh / 10000), error = function(e) { cat(s$key, "L ERR:", conditionMessage(e), "\n"); NULL })
   pr <- tryCatch(pct.of(f, s$rh / 10000), error = function(e) { cat(s$key, "R ERR:", conditionMessage(e), "\n"); NULL })
   if (!is.null(pl) && !is.null(pr)) {
-    OUT$subcortical[[s$key]] <- list(
+    cv <- curves.of(f)
+    cv$lo   <- round(cv$lo   * 10, 2)  # model unit -> cm3
+    cv$lin  <- round(cv$lin  * 10, 2)
+    cv$med  <- round(cv$med  * 10, 2)
+    cv$hiin <- round(cv$hiin * 10, 2)
+    cv$hi   <- round(cv$hi   * 10, 2)
+    OUT$subcortical[[s$key]] <- c(list(
       l = list(user = round(s$lh/1000, 2), pct = pl$pct * 100),
       r = list(user = round(s$rh/1000, 2), pct = pr$pct * 100),
-      median = pl$median * 10)   # per-hemisphere median, cm3
+      median = round(pl$median * 10, 2)),  # per-hemisphere median, cm3
+      cv)
     cat(s$key, " L:", round(pl$pct*100,1), " R:", round(pr$pct*100,1),
         " median_side_cm3:", round(pl$median*10,2), "\n")
   }

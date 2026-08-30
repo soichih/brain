@@ -278,6 +278,77 @@
     ]);
   })();
 
+  /* ---------------- population-norms centile panels (shared) ---------------- */
+  /* entries: [{ name, badge, norm:{ages,lo,lin,med,hiin,hi,median}, users:[{v,color,label}] }] */
+  function centileGrid(containerId, entries, cols, PW, PH) {
+    var N = window.BRAIN_NORMS;
+    if (!N) return;
+    var M = { l: 46, r: 14, t: 30, b: 26 };
+    var rows = Math.ceil(entries.length / cols);
+    var s = svg("svg", { viewBox: "0 0 " + (cols * PW) + " " + (rows * PH), role: "img" });
+
+    entries.forEach(function (e, idx) {
+      var x0 = (idx % cols) * PW, y0 = Math.floor(idx / cols) * PH;
+      var n = e.norm;
+      if (!n || !n.ages) return;
+      var pw = PW - M.l - M.r, ph = PH - M.t - M.b;
+      var ymax = Math.max.apply(null, n.hi.concat(e.users.map(function (u) { return u.v; }))) * 1.06;
+      var ymin = Math.min.apply(null, n.lo.concat(e.users.map(function (u) { return u.v; }))) * 0.9;
+      function X(a) { return x0 + M.l + ((a - n.ages[0]) / (n.ages[n.ages.length - 1] - n.ages[0])) * pw; }
+      function Y(v) { return y0 + M.t + ph - ((v - ymin) / (ymax - ymin)) * ph; }
+
+      function poly(aCol, bCol, fill) {
+        var d = "M";
+        aCol.forEach(function (v, i) { d += X(n.ages[i]) + " " + Y(v) + (i ? " L" : " "); });
+        for (var i2 = bCol.length - 1; i2 >= 0; i2--) { d += " L" + X(n.ages[i2]) + " " + Y(bCol[i2]); }
+        return svg("path", { d: d + " z", fill: fill });
+      }
+
+      s.appendChild(svg("rect", { x: x0 + 8, y: y0 + 8, width: PW - 16, height: PH - 16, rx: 8,
+        fill: "none", stroke: cssVar("--border", "#ddd"), "stroke-width": 1 }));
+      s.appendChild(text(x0 + M.l, y0 + 20, e.name, "rowlabel"));
+      s.appendChild(text(x0 + PW - M.r, y0 + 20, e.badge || "", "axis", "end"));
+      s.appendChild(text(x0 + M.l, y0 + PH - 8, "age " + n.ages[0] + " → " + n.ages[n.ages.length - 1], "axis"));
+
+      // y gridlines (drawn under the data)
+      var tk = niceTicks(ymin, ymax, 3);
+      var step = tk.length > 1 ? tk[1] - tk[0] : 1;
+      var digits = step < 0.1 ? 2 : step < 1 ? 1 : 0;
+      tk.forEach(function (v) {
+        var yv = Y(v);
+        s.appendChild(svg("line", { x1: x0 + M.l, y1: yv, x2: x0 + PW - M.r, y2: yv,
+          stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
+        s.appendChild(text(x0 + M.l - 6, yv + 3, fmt(v, digits), "axis", "end"));
+      });
+
+      s.appendChild(poly(n.lo, n.hi, cssVar("--band", "#eef0f8")));
+      s.appendChild(poly(n.lin, n.hiin, cssVar("--bandin", "#dfe3f2")));
+      var dmed = "";
+      n.med.forEach(function (v, i) { dmed += (i ? " L" : "M") + X(n.ages[i]) + " " + Y(v); });
+      s.appendChild(svg("path", { d: dmed, fill: "none", stroke: cssVar("--median", "#6d76a8"), "stroke-width": 2 }));
+
+      // user dots: vertical line at their age, one dot per user
+      if (e.users.length) {
+        var ua = N.meta.age, ux = X(ua);
+        s.appendChild(svg("line", { x1: ux, y1: y0 + M.t, x2: ux, y2: y0 + M.t + ph,
+          stroke: e.users[0].color, "stroke-width": 1, "stroke-dasharray": "2 3" }));
+        e.users.forEach(function (u) {
+          s.appendChild(svg("circle", { cx: ux, cy: Y(u.v), r: 5, fill: u.color,
+            stroke: cssVar("--surface", "#fff"), "stroke-width": 2 }));
+          var dot = svg("circle", { cx: 0, cy: 0, r: 14, fill: "transparent" });
+          dot.setAttribute("cx", ux); dot.setAttribute("cy", Y(u.v));
+          var ti = svg("title", {});
+          ti.textContent = e.name + (u.label ? " · " + u.label : "") + ": " + fmt(u.v, 1) +
+            " cm³ · " + u.pctl +
+            " · population median: " + fmt(n.median, 0) + " cm³";
+          dot.appendChild(ti);
+          s.appendChild(dot);
+        });
+      }
+    });
+    document.getElementById(containerId).appendChild(s);
+  }
+
   /* ---------------- composition vs. population norms ---------------- */
   (function norms() {
     var N = window.BRAIN_NORMS;
@@ -293,7 +364,6 @@
       .reduce(function (a, n) { return a + vol(n); }, 0);
     var vent = (g.VentricleChoroidVol ? g.VentricleChoroidVol.value : 0) / 1000;
 
-    /* panel definitions: [key in N.composition, display name, user value in cm³] */
     var PANELS = [
       { key: "GMV", name: "Cortical gray matter", user: g.CortexVol.value / 1000 },
       { key: "WMV", name: "Cerebral white matter", user: g.CerebralWhiteMatterVol.value / 1000 },
@@ -322,75 +392,55 @@
     html += "</p>";
     story.innerHTML = html;
 
-    /* small multiples: 2 × 2 centile panels */
-    var PW = 452, PH = 190, M = { l: 46, r: 14, t: 30, b: 26 };
-    var s = svg("svg", { viewBox: "0 0 " + (2 * PW) + " " + (2 * PH), role: "img" });
-
-    PANELS.forEach(function (p, idx) {
-      var x0 = (idx % 2) * PW, y0 = Math.floor(idx / 2) * PH;
-      var n = p.norm;
-      if (!n) return;
-      var pw = PW - M.l - M.r, ph = PH - M.t - M.b;
-      function X(a) { return x0 + M.l + ((a - n.ages[0]) / (n.ages[n.ages.length - 1] - n.ages[0])) * pw; }
-      var ymax = Math.max.apply(null, n.hi.concat([p.user])) * 1.06;
-      var ymin = Math.min.apply(null, n.lo.concat([p.user])) * 0.9;
-      function Y(v) { return y0 + M.t + ph - ((v - ymin) / (ymax - ymin)) * ph; }
-
-      function poly(aCol, bCol, fill) {
-        var d = "M";
-        aCol.forEach(function (v, i) { d += X(n.ages[i]) + " " + Y(v) + (i ? " L" : " "); });
-        for (var i2 = bCol.length - 1; i2 >= 0; i2--) { d += " L" + X(n.ages[i2]) + " " + Y(bCol[i2]); }
-        return svg("path", { d: d + " z", fill: fill });
-      }
-
-      s.appendChild(svg("rect", { x: x0 + 8, y: y0 + 8, width: PW - 16, height: PH - 16, rx: 8,
-        fill: "none", stroke: cssVar("--border", "#ddd"), "stroke-width": 1 }));
-      s.appendChild(text(x0 + M.l, y0 + 20, p.name, "rowlabel"));
-      s.appendChild(text(x0 + PW - M.r, y0 + 20, p.norm.pct != null ? "you: " + pctlLabel(p.norm.pct) : "", "axis", "end"));
-      s.appendChild(text(x0 + M.l, y0 + PH - 8, "age " + n.ages[0] + " → " + n.ages[n.ages.length - 1], "axis"));
-
-      // y gridlines (drawn under the data)
-      niceTicks(ymin, ymax, 3).forEach(function (v) {
-        var yv = Y(v);
-        s.appendChild(svg("line", { x1: x0 + M.l, y1: yv, x2: x0 + PW - M.r, y2: yv,
-          stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
-        s.appendChild(text(x0 + M.l - 6, yv + 3, fmt(v, 0), "axis", "end"));
-      });
-
-      s.appendChild(poly(n.lo, n.hi, cssVar("--band", "#eef0f8")));
-      s.appendChild(poly(n.lin, n.hiin, cssVar("--bandin", "#dfe3f2")));
-      [2.5, 25, 97.5].forEach(function (v, i) {
-        var col = n[i === 2.5 ? "lo" : i === 97.5 ? "hi" : "lin"];
-        var d2 = "";
-        col.forEach(function (vv, i2) { d2 += (i2 ? " L" : "M") + X(n.ages[i2]) + " " + Y(vv); });
-        s.appendChild(svg("path", { d: d2, fill: "none", stroke: cssVar("--grid", "#b9c0d4"),
-          "stroke-width": 1, "stroke-dasharray": "3 3" }));
-      });
-      var dmed = "";
-      n.med.forEach(function (v, i) { dmed += (i ? " L" : "M") + X(n.ages[i]) + " " + Y(v); });
-      s.appendChild(svg("path", { d: dmed, fill: "none", stroke: cssVar("--median", "#6d76a8"), "stroke-width": 2 }));
-
-      // user dot: vertical line at their age + dot
-      var ua = N.meta.age, ux = X(ua), uy = Y(p.norm.user != null ? p.norm.user : 0);
-      s.appendChild(svg("line", { x1: ux, y1: y0 + M.t, x2: ux, y2: y0 + M.t + ph,
-        stroke: cssVar("--s1", "#2a78d6"), "stroke-width": 1, "stroke-dasharray": "2 3" }));
-      s.appendChild(svg("circle", { cx: ux, cy: uy, r: 5, fill: cssVar("--s1", "#2a78d6"),
-        stroke: cssVar("--surface", "#fff"), "stroke-width": 2 }));
-      var dot = svg("circle", { cx: 0, cy: 0, r: 14, fill: "transparent" });
-      dot.setAttribute("cx", ux); dot.setAttribute("cy", uy);
-      var ti = svg("title", {});
-      ti.textContent = p.name + " · me: " + fmt(p.user, 1) + " cm³ · " + pctlLabel(p.norm.pct) +
-        " · population median: " + fmt(p.median, 0) + " cm³";
-      dot.appendChild(ti);
-      s.appendChild(dot);
-    });
-    document.getElementById("chart-comp-norms").appendChild(s);
+    centileGrid("chart-comp-norms", PANELS.map(function (p) {
+      return {
+        name: p.name,
+        badge: p.norm && p.norm.pct != null ? "you: " + pctlLabel(p.norm.pct) : "",
+        norm: p.norm,
+        users: p.norm && p.norm.pct != null
+          ? [{ v: p.user, pctl: pctlLabel(p.norm.pct), color: cssVar("--s1", "#2a78d6") }]
+          : [],
+      };
+    }), 2, 452, 190);
 
     addLegend("legend-comp-norms", [
       ["2.5–97.5th centile band", cssVar("--band", "#eef0f8")],
       ["25–75th centile band", cssVar("--bandin", "#dfe3f2")],
       ["population median", cssVar("--median", "#6d76a8")],
       ["me, at age " + N.meta.age, cssVar("--s1", "#2a78d6")],
+    ]);
+  })();
+
+  /* ---------------- subcortical vs. population norms ---------------- */
+  (function subNorms() {
+    var N = window.BRAIN_NORMS;
+    if (!N || !N.subcortical) return;
+    var WANT = ["Thalamus", "Caudate", "Putamen", "Pallidum", "Hippocampus",
+                "Amygdala", "Accumbens area", "VentralDC"];
+    var NICE = { VentralDC: "Ventral diencephalon", "Accumbens area": "Nucleus accumbens" };
+
+    var entries = [];
+    WANT.forEach(function (k) {
+      var n = N.subcortical[k];
+      if (!n || !n.ages) return;
+      entries.push({
+        name: NICE[k] || k,
+        badge: "you: L " + pctlLabel(n.l.pct) + " · R " + pctlLabel(n.r.pct),
+        norm: n,
+        users: [
+          { v: n.l.user, pctl: pctlLabel(n.l.pct), label: "left", color: cssVar("--s1", "#2a78d6") },
+          { v: n.r.user, pctl: pctlLabel(n.r.pct), label: "right", color: cssVar("--s2", "#eb6834") },
+        ],
+      });
+    });
+    centileGrid("chart-sub-norms", entries, 2, 452, 175);
+
+    addLegend("legend-sub-norms", [
+      ["2.5–97.5th centile band", cssVar("--band", "#eef0f8")],
+      ["25–75th centile band", cssVar("--bandin", "#dfe3f2")],
+      ["population median", cssVar("--median", "#6d76a8")],
+      ["me, left hemisphere", cssVar("--s1", "#2a78d6")],
+      ["me, right hemisphere", cssVar("--s2", "#eb6834")],
     ]);
   })();
 
