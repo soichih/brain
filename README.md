@@ -25,6 +25,12 @@ analysis of the same volume.
 - `data/brain-data.js` — all statistics on the page, generated from FreeSurfer stats
 - `analyze_freesurfer.py` — regenerates `data/brain-data.js` from a recon-all
   subject's `stats/` files
+- `data/brain-norms.js` — population reference data: centile curves and the
+  percentile of each measure against the lifespan brain-charts normative models
+  (Bethlehem et al. 2022, Nature), stratified for age 48 / male
+- `analyze_norms.R` — regenerates `data/brain-norms.js` from the
+  [brainchart/lifespan](https://github.com/brainchart/lifespan) fitted GAMLSS
+  models (see usage notes at the top of the script)
 - `charts.js` — vanilla-JS/SVG renderer for the page's charts (no dependencies)
 - `papaya.js`, `papaya.css` — vendored [Papaya](https://github.com/rii-mango/Papaya)
   viewer, the original viewer of this page; kept for reference, not currently loaded

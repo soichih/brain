@@ -19,6 +19,33 @@
   function fmt(n, digits) {
     return n.toLocaleString("en-US", { maximumFractionDigits: digits == null ? 1 : digits });
   }
+  function percentiles(p) {
+    if (p == null) return { ord: null, label: "" };
+    var o = p < 2.5 ? 0 : p < 25 ? 1 : p <= 75 ? 2 : p <= 97.5 ? 3 : 4;
+    var r = p < 2.5 ? "below the 2.5th centile" :
+            p <= 97.5 ? ordinal(Math.round(p)) + " centile" : "above the 97.5th centile";
+    return { ord: o, label: r };
+  }
+  function niceTicks(min, max, n) {
+    var span = max - min;
+    var step = Math.pow(10, Math.floor(Math.log(span / n) / Math.LN10));
+    var err = span / n / step;
+    if (err >= 7.5) step *= 10; else if (err >= 3.5) step *= 5; else if (err >= 1.5) step *= 2;
+    var out = [];
+    for (var t = Math.ceil(min / step) * step; t <= max + step * 1e-6; t += step) out.push(t);
+    return out;
+  }
+  function ordinal(n) {
+    var s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+  function pctlLabel(p) {
+    if (p == null) return "";
+    var v = Math.round(p);
+    if (p < 2.5) return "<2.5th pct";
+    if (p > 97.5) return ">97.5th pct";
+    return ordinal(v) + " pct";
+  }
 
   /* Bar with a 4px rounded data-end, square at the baseline. dir = 1 (grows right) | -1 (grows left) */
   function bar(x, y, w, h, fill, dir, title) {
@@ -171,11 +198,20 @@
 
     rows.forEach(function (r, i) {
       var yc = top + i * rowH + (rowH - 2 * barH) / 2;
+      var norm = window.BRAIN_NORMS && window.BRAIN_NORMS.subcortical &&
+                 window.BRAIN_NORMS.subcortical[r.structure];
       s.appendChild(text(L - 10, yc + barH + 2, NICE[r.structure] || r.structure, "rowlabel", "end"));
       s.appendChild(bar(L - 1, yc, Math.max((r.lh / max) * plot, 1), barH, cssVar("--s1", "#2a78d6"), 1,
-        r.structure + " · left: " + fmt(r.lh, 2) + " cm³"));
+        r.structure + " · left: " + fmt(r.lh, 2) + " cm³" +
+        (norm ? " — " + pctlLabel(norm.l.pct) : "")));
       s.appendChild(bar(L - 1, yc + barH + 1, Math.max((r.rh / max) * plot, 1), barH, cssVar("--s2", "#eb6834"), 1,
-        r.structure + " · right: " + fmt(r.rh, 2) + " cm³"));
+        r.structure + " · right: " + fmt(r.rh, 2) + " cm³" +
+        (norm ? " — " + pctlLabel(norm.r.pct) : "")));
+      if (norm) {
+        // percentile badge to the right of the row
+        s.appendChild(text(L + plot - 6, yc + barH, "L " + pctlLabel(norm.l.pct), "axis", "end"));
+        s.appendChild(text(L + plot - 6, yc + 2 * barH + 6, "R " + pctlLabel(norm.r.pct), "axis", "end"));
+      }
     });
     s.appendChild(svg("line", { x1: L - 1, y1: top - 6, x2: L - 1, y2: top + rows.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
     document.getElementById("chart-subcortical").appendChild(s);
@@ -242,6 +278,122 @@
     ]);
   })();
 
+  /* ---------------- composition vs. population norms ---------------- */
+  (function norms() {
+    var N = window.BRAIN_NORMS;
+    if (!N || !N.composition) return;
+
+    var g = D.global;
+    function vol(name) {
+      var p = D.subcorticalPairs.find(function (r) { return r.structure === name; });
+      return p ? p.lh + p.rh : 0;
+    }
+    var subSum = ["Thalamus", "Caudate", "Putamen", "Pallidum", "Hippocampus",
+                  "Amygdala", "Accumbens area", "VentralDC"]
+      .reduce(function (a, n) { return a + vol(n); }, 0);
+    var vent = (g.VentricleChoroidVol ? g.VentricleChoroidVol.value : 0) / 1000;
+
+    /* panel definitions: [key in N.composition, display name, user value in cm³] */
+    var PANELS = [
+      { key: "GMV", name: "Cortical gray matter", user: g.CortexVol.value / 1000 },
+      { key: "WMV", name: "Cerebral white matter", user: g.CerebralWhiteMatterVol.value / 1000 },
+      { key: "sGMV", name: "Subcortical gray matter", user: subSum / 1000 },
+      { key: "Ventricles", name: "Ventricles + choroid", user: vent },
+    ];
+    PANELS.forEach(function (p) {
+      var n = N.composition[p.key];
+      p.norm = n;
+      p.median = n && n.median != null ? n.median : null;
+    });
+
+    /* story paragraph */
+    var story = document.getElementById("norms-story");
+    var html = "<p class=\"sub\">";
+    var bits = [];
+    PANELS.forEach(function (p) {
+      if (!p.norm || p.norm.pct == null) return;
+      var b = percentiles(p.norm.pct);
+      var vs = p.median ? " (population median " + fmt(p.median, 0) + " cm³, i.e. " +
+        (p.user > p.median ? "+" : "−") + fmt(Math.abs((p.user / p.median - 1) * 100), 0) + "%)" : "";
+      bits.push("<strong>" + p.name.toLowerCase() + "</strong> at the " + b.label + vs);
+    });
+    html += "Compared with typical " + N.meta.sex + "s of my age (" + N.meta.age + "): " +
+      bits.join("; ") + ".";
+    html += "</p>";
+    story.innerHTML = html;
+
+    /* small multiples: 2 × 2 centile panels */
+    var PW = 452, PH = 190, M = { l: 46, r: 14, t: 30, b: 26 };
+    var s = svg("svg", { viewBox: "0 0 " + (2 * PW) + " " + (2 * PH), role: "img" });
+
+    PANELS.forEach(function (p, idx) {
+      var x0 = (idx % 2) * PW, y0 = Math.floor(idx / 2) * PH;
+      var n = p.norm;
+      if (!n) return;
+      var pw = PW - M.l - M.r, ph = PH - M.t - M.b;
+      function X(a) { return x0 + M.l + ((a - n.ages[0]) / (n.ages[n.ages.length - 1] - n.ages[0])) * pw; }
+      var ymax = Math.max.apply(null, n.hi.concat([p.user])) * 1.06;
+      var ymin = Math.min.apply(null, n.lo.concat([p.user])) * 0.9;
+      function Y(v) { return y0 + M.t + ph - ((v - ymin) / (ymax - ymin)) * ph; }
+
+      function poly(aCol, bCol, fill) {
+        var d = "M";
+        aCol.forEach(function (v, i) { d += X(n.ages[i]) + " " + Y(v) + (i ? " L" : " "); });
+        for (var i2 = bCol.length - 1; i2 >= 0; i2--) { d += " L" + X(n.ages[i2]) + " " + Y(bCol[i2]); }
+        return svg("path", { d: d + " z", fill: fill });
+      }
+
+      s.appendChild(svg("rect", { x: x0 + 8, y: y0 + 8, width: PW - 16, height: PH - 16, rx: 8,
+        fill: "none", stroke: cssVar("--border", "#ddd"), "stroke-width": 1 }));
+      s.appendChild(text(x0 + M.l, y0 + 20, p.name, "rowlabel"));
+      s.appendChild(text(x0 + PW - M.r, y0 + 20, p.norm.pct != null ? "you: " + pctlLabel(p.norm.pct) : "", "axis", "end"));
+      s.appendChild(text(x0 + M.l, y0 + PH - 8, "age " + n.ages[0] + " → " + n.ages[n.ages.length - 1], "axis"));
+
+      // y gridlines (drawn under the data)
+      niceTicks(ymin, ymax, 3).forEach(function (v) {
+        var yv = Y(v);
+        s.appendChild(svg("line", { x1: x0 + M.l, y1: yv, x2: x0 + PW - M.r, y2: yv,
+          stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
+        s.appendChild(text(x0 + M.l - 6, yv + 3, fmt(v, 0), "axis", "end"));
+      });
+
+      s.appendChild(poly(n.lo, n.hi, cssVar("--band", "#eef0f8")));
+      s.appendChild(poly(n.lin, n.hiin, cssVar("--bandin", "#dfe3f2")));
+      [2.5, 25, 97.5].forEach(function (v, i) {
+        var col = n[i === 2.5 ? "lo" : i === 97.5 ? "hi" : "lin"];
+        var d2 = "";
+        col.forEach(function (vv, i2) { d2 += (i2 ? " L" : "M") + X(n.ages[i2]) + " " + Y(vv); });
+        s.appendChild(svg("path", { d: d2, fill: "none", stroke: cssVar("--grid", "#b9c0d4"),
+          "stroke-width": 1, "stroke-dasharray": "3 3" }));
+      });
+      var dmed = "";
+      n.med.forEach(function (v, i) { dmed += (i ? " L" : "M") + X(n.ages[i]) + " " + Y(v); });
+      s.appendChild(svg("path", { d: dmed, fill: "none", stroke: cssVar("--median", "#6d76a8"), "stroke-width": 2 }));
+
+      // user dot: vertical line at their age + dot
+      var ua = N.meta.age, ux = X(ua), uy = Y(p.norm.user != null ? p.norm.user : 0);
+      s.appendChild(svg("line", { x1: ux, y1: y0 + M.t, x2: ux, y2: y0 + M.t + ph,
+        stroke: cssVar("--s1", "#2a78d6"), "stroke-width": 1, "stroke-dasharray": "2 3" }));
+      s.appendChild(svg("circle", { cx: ux, cy: uy, r: 5, fill: cssVar("--s1", "#2a78d6"),
+        stroke: cssVar("--surface", "#fff"), "stroke-width": 2 }));
+      var dot = svg("circle", { cx: 0, cy: 0, r: 14, fill: "transparent" });
+      dot.setAttribute("cx", ux); dot.setAttribute("cy", uy);
+      var ti = svg("title", {});
+      ti.textContent = p.name + " · me: " + fmt(p.user, 1) + " cm³ · " + pctlLabel(p.norm.pct) +
+        " · population median: " + fmt(p.median, 0) + " cm³";
+      dot.appendChild(ti);
+      s.appendChild(dot);
+    });
+    document.getElementById("chart-comp-norms").appendChild(s);
+
+    addLegend("legend-comp-norms", [
+      ["2.5–97.5th centile band", cssVar("--band", "#eef0f8")],
+      ["25–75th centile band", cssVar("--bandin", "#dfe3f2")],
+      ["population median", cssVar("--median", "#6d76a8")],
+      ["me, at age " + N.meta.age, cssVar("--s1", "#2a78d6")],
+    ]);
+  })();
+
   /* ---------------- full cortex table ---------------- */
   (function table() {
     var t = document.getElementById("cortex-table");
@@ -284,8 +436,8 @@
         body: "Estimated intracranial volume is " + fmt((g.eTIV || g.EstimatedTotalIntraCranialVol).value / 1000, 2) + " L — roughly how much space is inside your skull." },
       { emoji: "🪢", title: fmt(cc, 1) + " cm³ of cable",
         body: "The corpus callosum, the highway joining your hemispheres, has " + fmt(cc, 1) + " cm³ of white matter in five segments." },
- { emoji: "💦", title: fmt((vent / g.BrainSegVolNotVent.value) * 100, 1) + "% fluid",
-        body: "Ventricles and choroid plexus hold " + fmt(vent, 1) + " cm³ of cerebrospinal fluid — about " + fmt((vent / g.BrainSegVolNotVent.value) * 100, 1) + "% of the segmented brain." },
+ { emoji: "💦", title: fmt((vent / (g.BrainSegVolNotVent.value / 1000)) * 100, 1) + "% fluid",
+        body: "Ventricles and choroid plexus hold " + fmt(vent, 1) + " cm³ of cerebrospinal fluid — about " + fmt((vent / (g.BrainSegVolNotVent.value / 1000)) * 100, 1) + "% of the segmented brain." },
     ];
     var el = document.getElementById("facts");
     facts.forEach(function (f) {
