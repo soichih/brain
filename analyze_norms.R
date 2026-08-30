@@ -59,8 +59,12 @@ pct.of <- function(fitfile, value) {
   G[[Y]] <- value
   R <- Apply.Param(NEWData = G, FITParam = FIT$param, Add.Normalise = TRUE,
                    Add.Derivative = FALSE)
+  ## the centile column is named after the response column, which some fits
+  ## store as "<Y>" and others as "<Y>Transformed"
+  qcol <- sprintf("%s.q.pop", Y)
+  if (is.null(R[[qcol]])) qcol <- sprintf("%sTransformed.q.pop", Y)
   list(median  = R[[sprintf("PRED.m500.pop")]][1],
-       pct     = R[[sprintf("%s.q.pop", Y)]][1],
+       pct     = R[[qcol]][1],
        params  = list(mu = R[["mu.pop"]][1], sigma = R[["sigma.pop"]][1]))
 }
 
@@ -139,6 +143,70 @@ for (s in SIDES) {
       cv)
     cat(s$key, " L:", round(pl$pct*100,1), " R:", round(pr$pct*100,1),
         " median_side_cm3:", round(pl$median*10,2), "\n")
+  }
+}
+
+## ---- cortex: per-region mean thickness (Desikan atlas, 34 regions).
+## models may be in raw mm or model-unit mm/1e4 — detect the scale from the
+## population median (must land in 1.2–4 mm either way) ----
+CORTEX_VALS <- list(   ## lh, rh ThickAvg (mm) from lh/rh.aparc.stats
+  bankssts                = c(2.375, 2.567),
+  caudalanteriorcingulate = c(2.724, 2.327),
+  caudalmiddlefrontal     = c(2.402, 2.370),
+  cuneus                  = c(1.883, 1.876),
+  entorhinal              = c(2.812, 2.918),
+  fusiform                = c(2.679, 2.739),
+  inferiorparietal        = c(2.362, 2.386),
+  inferiortemporal        = c(2.773, 2.747),
+  isthmuscingulate        = c(2.344, 2.040),
+  lateraloccipital        = c(2.209, 2.250),
+  lateralorbitofrontal    = c(2.592, 2.285),
+  lingual                 = c(1.923, 1.918),
+  medialorbitofrontal     = c(2.372, 2.285),
+  middletemporal          = c(2.850, 2.809),
+  parahippocampal         = c(2.657, 2.542),
+  paracentral             = c(2.353, 2.403),
+  parsopercularis         = c(2.715, 2.531),
+  parsorbitalis           = c(2.596, 2.361),
+  parstriangularis        = c(2.562, 2.238),
+  pericalcarine           = c(1.510, 1.450),
+  postcentral             = c(2.115, 1.994),
+  posteriorcingulate      = c(2.536, 2.423),
+  precentral              = c(2.545, 2.431),
+  precuneus               = c(2.389, 2.367),
+  rostralanteriorcingulate= c(3.011, 2.526),
+  rostralmiddlefrontal    = c(2.317, 2.057),
+  superiorfrontal         = c(2.585, 2.442),
+  superiorparietal        = c(2.085, 2.047),
+  superiortemporal        = c(2.887, 2.800),
+  supramarginal           = c(2.345, 2.338),
+  frontalpole             = c(2.425, 2.001),
+  temporalpole            = c(3.469, 3.121),
+  transversetemporal      = c(2.360, 2.641),
+  insula                  = c(2.961, 2.731)
+)
+for (key in names(CORTEX_VALS)) {
+  f <- sprintf("FIT_CT_%s.rds", key)
+  res <- tryCatch({
+    cv <- curves.of(f)
+    med0 <- cv$med[1]
+    scale <- if (med0 * 10000 > 1.2 && med0 * 10000 < 4) 10000 else 1
+    ## keep only the population band at age 48 (i48 = index of 48 in seq(20,80))
+    i48 <- 48 - 20 + 1
+    pl <- pct.of(f, CORTEX_VALS[[key]][1] / scale)
+    pr <- pct.of(f, CORTEX_VALS[[key]][2] / scale)
+    list(l  = list(user = CORTEX_VALS[[key]][1], pct = pl$pct * 100),
+         r  = list(user = CORTEX_VALS[[key]][2], pct = pr$pct * 100),
+         median = round(pl$median * scale, 3),
+         lo   = round(cv$lo[i48]   * scale, 3),
+         lin  = round(cv$lin[i48]  * scale, 3),
+         hiin = round(cv$hiin[i48] * scale, 3),
+         hi   = round(cv$hi[i48]   * scale, 3))
+  }, error = function(e) { cat(key, "ERR:", conditionMessage(e), "\n"); NULL })
+  if (!is.null(res)) {
+    OUT$cortex[[key]] <- res
+    cat(key, " L:", round(res[["l"]][["pct"]], 1), " R:", round(res[["r"]][["pct"]], 1),
+        " median_mm:", res$median, "\n")
   }
 }
 

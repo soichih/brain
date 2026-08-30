@@ -176,6 +176,18 @@
     var WANT = ["Thalamus", "Caudate", "Putamen", "Pallidum", "Hippocampus",
                 "Amygdala", "Accumbens area", "VentralDC"];
     var NICE = { VentralDC: "Ventral diencephalon", "Accumbens area": "Nucleus accumbens" };
+    // one-line "what it does / what higher-lower volume might mean" per structure.
+    // associations are from population studies — small effects, not diagnostic of anything.
+    var DESC = {
+      "Thalamus": "The brain's relay hub — routes sensory and motor signals to the cortex and gates attention and sleep. Higher: often tracks overall brain size. Lower: reported in ADHD, multiple sclerosis, and normal aging.",
+      "Caudate": "Basal-ganglia structure for habit and skill learning, action selection, and linking motivation to movement. Higher: linked to goal-directed drive. Lower: reported in OCD, ADHD, and Parkinson's.",
+      "Putamen": "Basal-ganglia workhorse for initiating and smoothing movement, habit formation, and motor learning. Higher: generally follows overall size. Lower: an early radiological signature of Parkinson's disease.",
+      "Pallidum": "The basal ganglia's output gate — filters the movement commands assembled by caudate and putamen. Higher: little behavioral signal on its own. Lower: hallmark of parkinsonism and some dystonias.",
+      "Hippocampus": "Builds new long-term memories and encodes spatial maps; one of few regions that grows new neurons in adults. Higher: linked to aerobic fitness and better recall. Lower: strongly age-sensitive; shrinks in Alzheimer's and chronic stress.",
+      "Amygdala": "Tags what matters emotionally — threat, fear, reward — and stamps memories with feeling. Higher: reported with anxiety traits. Lower: associated with blunted threat responses and bipolar disorder.",
+      "Accumbens area": "Reward center where motivation becomes action — dopamine-driven wanting and reinforcement learning. Higher: tied to reward sensitivity. Lower: linked to apathy and loss of pleasure (anhedonia).",
+      "VentralDC": "Ventral diencephalon — deep midline tissue beside the hypothalamus: hormonal balance, autonomic control, feeding and sleep drives. Size differences here mostly reflect anatomy and overall brain size."
+    };
     var rows = D.subcorticalPairs
       .filter(function (p) { return WANT.indexOf(p.structure) >= 0; })
       .map(function (p) { return { structure: p.structure, lh: p.lh / 1000, rh: p.rh / 1000 }; });
@@ -184,7 +196,7 @@
     max = Math.ceil(max * 1.1); // cm³, rounded up
 
     var L = 150, R = 20, plot = 900 - L - R;
-    var rowH = 32, barH = 10, top = 26, bottom = 26;
+    var rowH = 46, barH = 10, top = 26, bottom = 26;
     var W = 900, H = top + rows.length * rowH + bottom;
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
 
@@ -211,6 +223,19 @@
         // percentile badge to the right of the row
         s.appendChild(text(L + plot - 6, yc + barH, "L " + pctlLabel(norm.l.pct), "axis", "end"));
         s.appendChild(text(L + plot - 6, yc + 2 * barH + 6, "R " + pctlLabel(norm.r.pct), "axis", "end"));
+      }
+      var desc = DESC[r.structure];
+      if (desc) {
+        // wrap the description onto up to two lines below the bars
+        var words = desc.split(" "), lines = [""];
+        words.forEach(function (w) {
+          if ((lines[lines.length - 1] + " " + w).trim().length > 105) lines.push(w);
+          else lines[lines.length - 1] = (lines[lines.length - 1] + " " + w).trim();
+        });
+        lines.forEach(function (ln, li) {
+          var t = text(L, yc + 2 * barH + 12 + li * 11, ln, "rowdesc", "start");
+          s.appendChild(t);
+        });
       }
     });
     s.appendChild(svg("line", { x1: L - 1, y1: top - 6, x2: L - 1, y2: top + rows.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
@@ -276,6 +301,131 @@
       ["left hemisphere", cssVar("--s1", "#2a78d6")],
       ["right hemisphere", cssVar("--s2", "#eb6834")],
     ]);
+  })();
+
+  /* ---------------- what each cortical region does ---------------- */
+  // Desikan atlas, 34 regions. Associations are population-level and small —
+  // regional thickness in a healthy scan is mostly anatomy and heredity.
+  var CORTEX_DESC = {
+    bankssts: "Multimodal junction at the back of the superior temporal sulcus — blends auditory, visual, and social cues (voices, biological motion). Thinner: linked to dyslexia and voice-recognition difficulty. Thicker: rarely abnormal on its own.",
+    caudalanteriorcingulate: "Affective–autonomic part of the cingulate — conflict monitoring, pain, adjusting heart rate and breathing. Thinner: reported in depression and anxiety.",
+    caudalmiddlefrontal: "Dorsolateral prefrontal cortex — working memory, planning, self-control; the brain's executive desk. Thinner: seen in ADHD and schizophrenia. Thicker: generally favorable in aging studies.",
+    cuneus: "Early visual cortex on the medial surface — basic visual features and the visual periphery. Thickness here mostly mirrors the shape of the fold; deviations are rarely meaningful.",
+    entorhinal: "The gateway between the hippocampus and the rest of the cortex — where memories enter long-term storage. Thinner: the earliest consistent MRI sign of Alzheimer's disease.",
+    fusiform: "Face and object recognition (the 'fusiform face area'), plus word recognition after literacy. Thinner: linked to prosopagnosia (face blindness). Thicker: sometimes reported in autism research.",
+    inferiorparietal: "A crossroads for attention, number, language, and self/other perspective-taking. Thinner: seen in dyscalculia and Alzheimer's. Thicker: linked to education and spatial skill.",
+    inferiortemporal: "High-level visual area — recognizing objects, body parts, and faces in complex scenes. Thinner: associated with visual agnosia in dementia.",
+    insula: "Interoception — sensing your own body (heartbeat, breath, gut) — plus taste, pain, and emotional salience. Thinner: linked to substance use and anxiety.",
+    isthmuscingulate: "Narrow waist of the cingulate connecting emotion and memory circuits via the cingulum bundle. Thinner: reported in late-life depression and early Alzheimer's.",
+    lateraloccipital: "Object-shape processing (the lateral occipital complex) — 'what is that silhouette?'. Thinner: with visual-object difficulties; otherwise largely anatomy-driven.",
+    lateralorbitofrontal: "Evaluates punishment, social rules, and impulse inhibition. Thinner: linked to disinhibition and antisocial traits.",
+    lingual: "Early visual area for color, letters, and reading. Thinner: reported in reading disability and some migraine-visual changes.",
+    medialorbitofrontal: "The reward-and-value center of the decision loop — what feels good and is worth doing. Thinner: strongly associated with depression.",
+    middletemporal: "Motion-detection area (V5/MT), plus word-form and semantic processing. Thinner: with motion-perception deficits; otherwise subtle.",
+    parahippocampal: "Contextual memory — tags places and scenes so the hippocampus can store them. Thinner: an early Alzheimer's signal.",
+    paracentral: "Primary motor/sensory strip for the legs and feet. Tracks the rest of the motor strip; deviations here are rarely behavioral.",
+    parsopercularis: "Inferior frontal (Broca's) area — articulating speech and syntax production. Thinner: reported in stuttering and language disorders.",
+    parsorbitalis: "Inferior frontal cortex above the orbit — stopping impulses and emotional control of speech. Thinner: linked to disinhibition and substance use.",
+    parstriangularis: "The other half of Broca's area — combining words into meaning, semantic selection. Thinner: seen in aphasia and dyslexia.",
+    pericalcarine: "Primary visual cortex (V1, along the calcarine sulcus). Normally the thinnest cortex in the brain — ~1.5 mm here is expected, not a red flag.",
+    postcentral: "Primary somatosensory cortex — touch, pressure, and body position across the whole body surface. Thinner: with dulled sensation; mostly mirrors hand/mouth representation size.",
+    posteriorcingulate: "Default-mode hub — self-referential thought and memory retrieval; among the brain's most metabolically active areas. Thinner: a hallmark of early Alzheimer's.",
+    precentral: "Primary motor cortex — every voluntary movement starts here. Thinner: with aging and motor change. Thicker: linked to motor training.",
+    precuneus: "Medial-parietal hub of the default-mode network — autobiographical memory, self-reflection, visuospatial imagery. Thinner: in cognitive decline.",
+    rostralanteriorcingulate: "Front-most cingulate — emotion regulation, conflict resolution, motivation. Thinner: associated with depression, ADHD, and apathy.",
+    rostralmiddlefrontal: "Anterior dorsolateral prefrontal cortex — flexible thinking, strategy switching, working memory. Thinner: in schizophrenia and executive dysfunction.",
+    superiorfrontal: "Medial superior frontal — motivation, initiative, and motor planning (the SMA). Thinner bilaterally: linked to apathy.",
+    superiorparietal: "Spatial attention and reaching — where your body is relative to objects. Thinner: with visuospatial decline.",
+    superiortemporal: "Auditory cortex and speech perception (right side: voices and social sounds). Thinner: reported in schizophrenia and hearing-related decline.",
+    supramarginal: "Phonology and empathy hub — mapping sounds to letters, sensing others' states. Thinner: in dyslexia and empathic deficits.",
+    frontalpole: "The very front of the brain — planning multi-step goals, introspection, imagining the future. Thinner: with aging and executive decline.",
+    temporalpole: "Anterior temporal — semantic and social memory, recognizing familiar people. Thinner: in frontotemporal dementia and semantic impairment.",
+    transversetemporal: "Primary auditory cortex (Heschl's gyrus) — the first cortical stop for sound. Thickness here is notably heritable.",
+  };
+
+  /* ---------------- cortex thickness vs. population ---------------- */
+  (function cortexNorms() {
+    var N = window.BRAIN_NORMS;
+    if (!N || !N.cortex) return;
+    var surf = cssVar("--surface", "#fcfcfb");
+    var keys = Object.keys(N.cortex).sort();
+    var el = document.getElementById("chart-cortex-norms");
+    if (!el) return;
+
+    var lo = 10, hi = 0;
+    keys.forEach(function (k) {
+      var n = N.cortex[k];
+      lo = Math.min(lo, n.lo, n.l.user, n.r.user);
+      hi = Math.max(hi, n.hi, n.l.user, n.r.user);
+    });
+    lo = Math.floor((lo - 0.08) * 20) / 20;
+    hi = Math.ceil((hi + 0.08) * 20) / 20;
+
+    var W = 940, L = 185, R = 120;
+    var plot = W - L - R;
+    var rowH = 21, top = 30, bottom = 28;
+    var H = top + keys.length * rowH + bottom;
+    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
+    function X(v) { return L + ((v - lo) / (hi - lo)) * plot; }
+
+    niceTicks(lo, hi, 8).forEach(function (t) {
+      var x = X(t);
+      s.appendChild(svg("line", { x1: x, y1: top - 10, x2: x, y2: H - bottom + 4, stroke: cssVar("--grid", "#e1e0d9"), "stroke-width": 1 }));
+      s.appendChild(svg("line", { x1: x, y1: top - 4, x2: x, y2: top - 10, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
+      s.appendChild(text(x, top - 14, t.toFixed(1), "axis", "middle"));
+    });
+    s.appendChild(text(W - R + 6, top - 14, "mm", "axis", "start"));
+
+    keys.forEach(function (k, i) {
+      var n = N.cortex[k];
+      var name = REGION_NAMES[k] || k;
+      var yc = top + i * rowH + (rowH - 12) / 2;
+      var tip = name + " (population, 48-year-old male)\n" +
+        "band 2.5–97.5: " + n.lo.toFixed(2) + "–" + n.hi.toFixed(2) + " mm · median " + n.median.toFixed(2) + " mm\n" +
+        "me, left: " + n.l.user.toFixed(2) + " mm — " + percentiles(n.l.pct).label +
+        "\nme, right: " + n.r.user.toFixed(2) + " mm — " + percentiles(n.r.pct).label;
+      // population bands
+      s.appendChild(svg("rect", { x: X(n.lo), y: yc, width: X(n.hi) - X(n.lo), height: 12, rx: 3, fill: cssVar("--band", "#eef0f8") }));
+      s.appendChild(svg("rect", { x: X(n.lin), y: yc, width: X(n.hiin) - X(n.lin), height: 12, rx: 3, fill: cssVar("--bandin", "#dfe3f2") }));
+      s.appendChild(svg("line", { x1: X(n.median), y1: yc - 2, x2: X(n.median), y2: yc + 14, stroke: cssVar("--median", "#6d76a8"), "stroke-width": 2 }));
+      // me: left + right dots (ring in surface color so overlapping dots stay separable)
+      s.appendChild(svg("circle", { cx: X(n.l.user), cy: yc + 3, r: 4.5, fill: cssVar("--s1", "#2a78d6"), stroke: surf, "stroke-width": 2 }));
+      s.appendChild(svg("circle", { cx: X(n.r.user), cy: yc + 9, r: 4.5, fill: cssVar("--s2", "#eb6834"), stroke: surf, "stroke-width": 2 }));
+      // labels + hit area
+      var lbl = text(L - 8, yc + 10, name, "rowlabel", "end");
+      var ttl = svg("title", {});
+      ttl.textContent = tip + "\n\n" + (CORTEX_DESC[k] || "");
+      lbl.appendChild(ttl);
+      s.appendChild(lbl);
+      var hit = svg("rect", { x: L, y: top + i * rowH, width: plot, height: rowH, fill: "transparent" });
+      var httl = svg("title", {});
+      httl.textContent = tip + "\n\n" + (CORTEX_DESC[k] || "");
+      hit.appendChild(httl);
+      s.appendChild(hit);
+      // short percentile badges on the right
+      s.appendChild(text(W - R + 6, yc + 6, "L " + pctlLabel(n.l.pct).replace(" pct", ""), "axis", "end"));
+      s.appendChild(text(W - R + 6, yc + 14, "R " + pctlLabel(n.r.pct).replace(" pct", ""), "axis", "end"));
+    });
+    s.appendChild(svg("line", { x1: L - 1, y1: top - 6, x2: L - 1, y2: top + keys.length * rowH, stroke: cssVar("--baseline", "#c3c2b7"), "stroke-width": 1 }));
+    el.appendChild(s);
+
+    addLegend("legend-cortex-norms", [
+      ["2.5–97.5th centile band", cssVar("--band", "#eef0f8")],
+      ["25–75th centile band", cssVar("--bandin", "#dfe3f2")],
+      ["population median", cssVar("--median", "#6d76a8")],
+      ["me, left hemisphere", cssVar("--s1", "#2a78d6")],
+      ["me, right hemisphere", cssVar("--s2", "#eb6834")],
+    ]);
+
+    // "what each region does" table
+    var tb = document.getElementById("cortex-desc");
+    if (tb) {
+      var html = "<thead><tr><th>Region</th><th>What it does · what thinner/thicker might mean</th></tr></thead><tbody>";
+      keys.forEach(function (k) {
+        html += "<tr><td>" + (REGION_NAMES[k] || k) + "</td><td>" + (CORTEX_DESC[k] || "") + "</td></tr>";
+      });
+      tb.innerHTML = html + "</tbody>";
+    }
   })();
 
   /* ---------------- population-norms centile panels (shared) ---------------- */

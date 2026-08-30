@@ -126,6 +126,7 @@
       svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
       .axis { font-size: 10.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
       .rowlabel { font-size: 11.5px; fill: var(--ink-2); }
+      .rowdesc { font-size: 10px; fill: var(--muted); }
       .val { font-size: 10.5px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
       .seg-label { font-size: 11px; font-weight: 500; }
       mark:hover rect.bar { filter: brightness(1.08); }
@@ -263,9 +264,46 @@
         <figcaption>
           <h3>Cortical thickness by region</h3>
           <p>Mean thickness (mm) across the 34 Desikan atlas regions, left of the axis = left hemisphere</p>
+          <p style="font-size:12px; margin-bottom:12px">
+            A short "what it does" note for each region appears on hover and in the
+            table under the next figure.
+          </p>
         </figcaption>
         <div id="chart-cortex"></div>
         <div class="legend" id="legend-cortex"></div>
+      </figure>
+
+      <figure>
+        <figcaption>
+          <h3>Cortical thickness vs. population</h3>
+          <p>
+            The same 34 regions against the same reference charts
+            (<a href="https://www.nature.com/articles/s41586-022-05280-y">Bethlehem et&nbsp;al., 2022</a>):
+            each row is one region with the 2.5th–97.5th (outer) and 25th–75th (inner)
+            centile band and the population median for a <strong>48-year-old male</strong>.
+            The dots are my left (blue) and right (orange) hemispheres; badges on the
+            right give each hemisphere's percentile. Hover a row for the population
+            numbers and a note on what that region does.
+          </p>
+        </figcaption>
+        <div id="chart-cortex-norms"></div>
+        <div class="legend" id="legend-cortex-norms"></div>
+        <p class="sub" style="margin-top:10px; font-size:12px">
+          Caveats as above: reference models were fitted on FreeSurfer&nbsp;6-era
+          harmonized segmentations (this scan used 8.2), models pool the hemispheres
+          into one distribution (left/right labels distinguish my two dots), and
+          regional thickness in a healthy scan is mostly anatomy and heredity —
+          this is not a clinical assessment.
+        </p>
+        <details>
+          <summary>What each region does (all 34)</summary>
+          <table id="cortex-desc"></table>
+          <p class="sub" style="font-size:12px">
+            One-line summaries of the region's primary role and the conditions its
+            thickness has been linked to in population studies — associations are
+            small and rarely diagnostic on their own.
+          </p>
+        </details>
       </figure>
 
       <details>
