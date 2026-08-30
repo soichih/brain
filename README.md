@@ -15,9 +15,9 @@ see [`LICENSE-PAPAYA.txt`](./LICENSE-PAPAYA.txt)).
 
 ## Note
 
-This is my own scan, shared publicly for fun/curiosity. It has not been
-de-identified (defaced) — the face is visible in the anatomical volume. This
-is not a clinical tool ("THIS PRODUCT IS NOT FOR CLINICAL USE" per the
-Papaya license).
+This is my own scan, shared publicly for fun/curiosity. It has been defaced
+(brain-extracted) — the skull and face are removed, so no facial features are
+visible in the volume. This is not a clinical tool ("THIS PRODUCT IS NOT FOR
+CLINICAL USE" per the Papaya license).
 
 More about me: [hayashi.in](https://hayashi.in)
