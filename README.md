@@ -17,8 +17,8 @@ analysis of the same volume.
   vendored — the page loads no external resources)
 - `mri-view.nvd` — the FreeBrowse document shown in the viewer: `t1.nii.gz`
   with `aparc+aseg.nii.gz` colorized by NiiVue's `freesurfer` colormap, plus
-  the parcellated `lh/rh.{pial,white}.mz3` surface meshes (volume layers and
-  mesh layers toggle via FreeBrowse's panel tabs)
+  the parcellated `lh/rh.{pial,white}.mz3` surface meshes (hidden by default;
+  volume layers and mesh layers toggle via FreeBrowse's panel tabs)
 - `convert_surfaces.py` — regenerates the `.mz3` meshes from a recon-all
   subject's `surf/` and `label/` files (per-vertex parcellation colors baked
   into the MZ3 format)

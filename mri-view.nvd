@@ -21,13 +21,13 @@
       "url": "lh.pial.mz3",
       "name": "left pial (aparc).mz3",
       "opacity": 1.0,
-      "visible": true
+      "visible": false
     },
     {
       "url": "rh.pial.mz3",
       "name": "right pial (aparc).mz3",
       "opacity": 1.0,
-      "visible": true
+      "visible": false
     },
     {
       "url": "lh.white.mz3",

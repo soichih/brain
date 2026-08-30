@@ -175,18 +175,19 @@
         project's web viewer (vendored here, fully offline). The colored overlay is the
         <code>aparc+aseg</code> segmentation — 104 labeled structures — togglable and
         adjustable from FreeBrowse's layers panel. The same scene also carries the
-        parcellated white/pial surface meshes recon-all fitted: use the tabs in the
-        panel at the right to switch between the volume layers and the surface meshes,
-        and the eye icons to toggle individual layers.
+        parcellated white/pial surface meshes recon-all fitted (hidden by default):
+        use the tabs in the panel at the right to switch between the volume layers
+        and the surface meshes, and the eye icons to toggle individual layers.
       </p>
       <div class="viewer-card">
         <iframe src="freebrowse.html?nvd=mri-view.nvd" title="FreeBrowse viewer" loading="lazy"></iframe>
         <div class="viewer-caption">
           Volumes: defaced T1 (<code>t1.nii.gz</code>) + <code>aparc+aseg.nii.gz</code>
-          rendered with NiiVue's <code>freesurfer</code> colormap. Surfaces:
-          <code>lh/rh.pial.mz3</code> (visible) and <code>lh/rh.white.mz3</code> (hidden —
-          enable in the layers panel), converted from FreeSurfer's native meshes with
-          <code>convert_surfaces.py</code>; region colors come from <code>aparc.annot</code>.
+          rendered with NiiVue's <code>freesurfer</code> colormap. Surfaces (off by
+          default — enable in the mesh tab of the layers panel):
+          <code>lh/rh.pial.mz3</code> and <code>lh/rh.white.mz3</code>, converted from
+          FreeSurfer's native meshes with <code>convert_surfaces.py</code>; region
+          colors come from <code>aparc.annot</code>.
         </div>
       </div>
 
