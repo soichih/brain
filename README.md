@@ -17,6 +17,12 @@ analysis of the same volume.
   vendored — the page loads no external resources)
 - `mri-view.nvd` — the FreeBrowse document shown in the viewer: `t1.nii.gz`
   with `aparc+aseg.nii.gz` colorized by NiiVue's `freesurfer` colormap
+- `mri-surfaces.nvd` + `lh/rh.{pial,white}.mz3` — second FreeBrowse document
+  showing the surface meshes (gray/white boundary and pial) colored by the
+  aparc parcellation
+- `convert_surfaces.py` — regenerates the `.mz3` meshes from a recon-all
+  subject's `surf/` and `label/` files (per-vertex parcellation colors baked
+  into the MZ3 format)
 - `t1.nii.gz` — my anatomical T1 MRI, NIfTI format (defaced; see Note)
 - `aparc+aseg.nii.gz` — FreeSurfer `aparc+aseg` label volume (int16 label ids), NIfTI
 - `aparc+aseg.rgb.nii.gz` — the same labels colorized into an RGB NIfTI

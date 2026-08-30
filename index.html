@@ -185,6 +185,24 @@
         </div>
       </div>
 
+      <h2>Explore the surfaces</h2>
+      <p class="sub">
+        recon-all also fits triangulated surface meshes — the gray/white boundary
+        (<code>white</code>) and the outer brain surface (<code>pial</code>) — and parcels
+        them into the same 34 cortical regions. Below, both hemispheres' pial surfaces are
+        colored by parcellation; the converted meshes are self-contained files
+        (<code>*.mz3</code>) you can spin, zoom, and edit from FreeBrowse's layers panel.
+      </p>
+      <div class="viewer-card">
+        <iframe src="freebrowse.html?nvd=mri-surfaces.nvd" title="FreeBrowse surface view" loading="lazy"></iframe>
+        <div class="viewer-caption">
+          Meshes: <code>lh/rh.pial.mz3</code> (visible) and <code>lh/rh.white.mz3</code>
+          (start hidden — enable them in the layers panel), converted from FreeSurfer's
+          native surfaces with <code>convert_surfaces.py</code>; region colors come from
+          <code>aparc.annot</code>. Drag to rotate.
+        </div>
+      </div>
+
       <!-- ======== charts ======== -->
       <h2>What the segmentation says</h2>
       <p class="sub">
@@ -324,6 +342,8 @@
           T1, 16 CPU threads on a home server. The pipeline skull-strips (SynthStrip), segments
           (SynthSeg), fits white/pial surfaces, parcellates the cortex into the 34-region
           Desikan atlas per hemisphere, and measures volumes, thickness, and surface areas.
+          The surface viewer shows those fitted meshes after conversion to the web-friendly
+          MZ3 format by <code>convert_surfaces.py</code> (parcellation colors baked in).
         </p>
         <p style="margin-bottom: 0">
           This page is a static file: the charts above are drawn in the browser from

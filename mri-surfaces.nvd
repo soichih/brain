@@ -1,0 +1,29 @@
+{
+  "title": "My Brain — FreeSurfer surfaces (aparc)",
+  "meshes": [
+    {
+      "url": "lh.pial.mz3",
+      "name": "left pial (aparc).mz3",
+      "opacity": 1.0,
+      "visible": true
+    },
+    {
+      "url": "rh.pial.mz3",
+      "name": "right pial (aparc).mz3",
+      "opacity": 1.0,
+      "visible": true
+    },
+    {
+      "url": "lh.white.mz3",
+      "name": "left white (aparc).mz3",
+      "opacity": 0.5,
+      "visible": false
+    },
+    {
+      "url": "rh.white.mz3",
+      "name": "right white (aparc).mz3",
+      "opacity": 0.5,
+      "visible": false
+    }
+  ]
+}
