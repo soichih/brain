@@ -30,9 +30,15 @@ analysis of the same volume.
 - `data/brain-data.js` — all statistics on the page, generated from FreeSurfer stats
 - `analyze_freesurfer.py` — regenerates `data/brain-data.js` from a recon-all
   subject's `stats/` files
+- `compare_norms.py` — places one or more recon-all subjects side by side into
+  the population centile bands of `data/brain-norms.js` (used to cross-check the
+  FS 8.2 subject against an FS 6.0 re-processing, `brain-fs6`, and to measure the
+  pipeline-version effect)
 - `data/brain-norms.js` — population reference data: centile curves and the
   percentile of each measure against the lifespan brain-charts normative models
-  (Bethlehem et al. 2022, Nature), stratified for age 48 / male
+  (Bethlehem et al. 2022, Nature), stratified for age 48 / male. Percentile
+  inputs come from the FS 6.0 re-processing (matching the reference pipeline);
+  descriptive charts use the FS 8.2 stats
 - `analyze_norms.R` — regenerates `data/brain-norms.js` from the
   [brainchart/lifespan](https://github.com/brainchart/lifespan) fitted GAMLSS
   models (see usage notes at the top of the script)
@@ -44,7 +50,12 @@ analysis of the same volume.
 
 ```
 python3 analyze_freesurfer.py ~/freesurfer-subjects/output/brain data/brain-data.js
+python3 compare_norms.py ~/freesurfer-subjects/output/brain ~/freesurfer-subjects/brain-fs6
 ```
+
+The population percentiles additionally require an FS 6.0 re-processing of the
+same T1 (matching the reference models' pipeline; see `analyze_norms.R` for the
+Docker one-liner).
 
 The segmentation was produced with FreeSurfer 8.2.0 `recon-all -all` (official
 Docker image) on the T1 above, on a home server. The page is fully static —

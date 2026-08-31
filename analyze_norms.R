@@ -9,7 +9,8 @@
 ##   git clone https://github.com/brainchart/lifespan $HOME/lifespan
 ##   docker run --rm -v $HOME:/repo fs-norms-r Rscript /repo/brain/analyze_norms.R
 ## (the script expects the lifespan repo at /repo/lifespan and writes /repo/brain-norms.js;
-##  user values below are from FreeSurfer 8.2.0 recon-all stats — update them to re-run)
+##  user values below are from the FreeSurfer 6.0 reprocessing of the scan
+##  (subject brain-fs6) to match the models' reference pipeline — update to re-run)
 
 REPO <- "/repo/lifespan"; setwd(REPO)
 for (f in c("100.common-variables.r","101.common-functions.r","102.gamlss-recode.r",
@@ -18,28 +19,33 @@ for (f in c("100.common-variables.r","101.common-functions.r","102.gamlss-recode
 
 library(jsonlite)
 
-## ---- user values (from FreeSurfer 8.2.0, mm3) ----
+## ---- user values ----
+## The reference models were fitted on FreeSurfer 6.0-era segmentations, so the
+## values fed to the models come from an FS 6.0 reprocessing of the same scan
+## (subject brain-fs6) — compare_norms.py documents the measured version effects.
+## Descriptive charts on the page still use the full FS 8.2.0 stats.
 USER <- list(
+  ## FS6's Talairach-derived eTIV is broken here (1.08 L, below its own BrainSeg
+  ## volume — BrainSegVol-to-eTIV = 1.14 must be < 1); keep the FS8 value.
   eTIV       = 1681088.9,
-  GMV        = 480846.4,    ## CortexVol
-  WMV        = 499310.0,    ## CerebralWhiteMatterVol
-  sGMV       = (7098.5+7479.8)+(4009.0+4117.0)+(5779.7+5592.0)+(1785.4+1689.4)+
-               (4422.3+4991.9)+(2077.7+2266.7)+(628.8+706.5)+(4325.9+4305.2),
-  Ventricles = 19891.0,
-  TCV        = 480846.4 + 499310.0,   ## GMV+WMV (cerebrum total cortical volume)
-  meanCT     = (2.45422+2.35981)/2,  ## mean of lh/rh MeanThickness (mm)
-  totalSA    = 91653.9 + 92095.2,
+  GMV        = 490636.3,    ## CortexVol
+  WMV        = 499171.2,    ## CerebralWhiteMatterVol
+  sGMV       = (7630.9+8093.0)+(3767.1+3730.1)+(5131.2+5140.2)+(1926.1+1834.4)+
+               (4029.3+4581.9)+(1984.4+1814.7)+(531.9+661.1)+(4308.5+4278.6),
+  Ventricles = 18947.0,
+  TCV        = 490636.3 + 499171.2,   ## GMV+WMV (cerebrum total cortical volume)
+  meanCT     = (2.49094+2.40232)/2,  ## mean of lh/rh MeanThickness (mm)
+  totalSA    = 91638.9 + 91637.0,
   ## subcortical L+R totals, mm3
-  Thalamus.Proper  = 7098.5+7479.8,
-  Caudate          = 4009.0+4117.0,
-  Putamen          = 5779.7+5592.0,
-  Pallidum         = 1785.4+1689.4,
-  Hippocampus      = 4422.3+4991.9,
-  Amygdala         = 2077.7+2266.7,
-  Accumbens.area   = 628.8+706.5,
-  VentralDC        = 4325.9+4305.2
+  Thalamus.Proper  = 7630.9+8093.0,
+  Caudate          = 3767.1+3730.1,
+  Putamen          = 5131.2+5140.2,
+  Pallidum         = 1926.1+1834.4,
+  Hippocampus      = 4029.3+4581.9,
+  Amygdala         = 1984.4+1814.7,
+  Accumbens.area   = 531.9+661.1,
+  VentralDC        = 4308.5+4278.6
 )
-## real totalSA from lh+rh white-surface areas (mm2)
 
 
 ## ---- helpers ----
@@ -116,14 +122,14 @@ for (key in names(GLOBAL_FILES)) {
 ## ---- subcortical: models are per-hemisphere (each side an observation),
 ## so percentiles are computed per side against the single-side distribution ----
 SIDES <- list(
-  list(fs = "Thalamus.Proper",  key = "Thalamus",      lh = 7098.5, rh = 7479.8),
-  list(fs = "Caudate",          key = "Caudate",       lh = 4009.0, rh = 4117.0),
-  list(fs = "Putamen",          key = "Putamen",       lh = 5779.7, rh = 5592.0),
-  list(fs = "Pallidum",         key = "Pallidum",      lh = 1785.4, rh = 1689.4),
-  list(fs = "Hippocampus",      key = "Hippocampus",   lh = 4422.3, rh = 4991.9),
-  list(fs = "Amygdala",         key = "Amygdala",      lh = 2077.7, rh = 2266.7),
-  list(fs = "Accumbens.area",   key = "Accumbens area",lh = 628.8,  rh = 706.5),
-  list(fs = "VentralDC",        key = "VentralDC",     lh = 4325.9, rh = 4305.2)
+  list(fs = "Thalamus.Proper",  key = "Thalamus",      lh = 7630.9, rh = 8093.0),
+  list(fs = "Caudate",          key = "Caudate",       lh = 3767.1, rh = 3730.1),
+  list(fs = "Putamen",          key = "Putamen",       lh = 5131.2, rh = 5140.2),
+  list(fs = "Pallidum",         key = "Pallidum",      lh = 1926.1, rh = 1834.4),
+  list(fs = "Hippocampus",      key = "Hippocampus",   lh = 4029.3, rh = 4581.9),
+  list(fs = "Amygdala",         key = "Amygdala",      lh = 1984.4, rh = 1814.7),
+  list(fs = "Accumbens.area",   key = "Accumbens area",lh = 531.9,  rh = 661.1),
+  list(fs = "VentralDC",        key = "VentralDC",     lh = 4308.5, rh = 4278.6)
 )
 for (s in SIDES) {
   f <- sprintf("FIT_%sTransformed.gz", s$fs)
@@ -150,40 +156,41 @@ for (s in SIDES) {
 ## models may be in raw mm or model-unit mm/1e4 — detect the scale from the
 ## population median (must land in 1.2–4 mm either way) ----
 CORTEX_VALS <- list(   ## lh, rh ThickAvg (mm) from lh/rh.aparc.stats
-  bankssts                = c(2.375, 2.567),
-  caudalanteriorcingulate = c(2.724, 2.327),
-  caudalmiddlefrontal     = c(2.402, 2.370),
-  cuneus                  = c(1.883, 1.876),
-  entorhinal              = c(2.812, 2.918),
-  fusiform                = c(2.679, 2.739),
-  inferiorparietal        = c(2.362, 2.386),
-  inferiortemporal        = c(2.773, 2.747),
-  isthmuscingulate        = c(2.344, 2.040),
-  lateraloccipital        = c(2.209, 2.250),
-  lateralorbitofrontal    = c(2.592, 2.285),
-  lingual                 = c(1.923, 1.918),
-  medialorbitofrontal     = c(2.372, 2.285),
-  middletemporal          = c(2.850, 2.809),
-  parahippocampal         = c(2.657, 2.542),
-  paracentral             = c(2.353, 2.403),
-  parsopercularis         = c(2.715, 2.531),
-  parsorbitalis           = c(2.596, 2.361),
-  parstriangularis        = c(2.562, 2.238),
-  pericalcarine           = c(1.510, 1.450),
-  postcentral             = c(2.115, 1.994),
-  posteriorcingulate      = c(2.536, 2.423),
-  precentral              = c(2.545, 2.431),
-  precuneus               = c(2.389, 2.367),
-  rostralanteriorcingulate= c(3.011, 2.526),
-  rostralmiddlefrontal    = c(2.317, 2.057),
-  superiorfrontal         = c(2.585, 2.442),
-  superiorparietal        = c(2.085, 2.047),
-  superiortemporal        = c(2.887, 2.800),
-  supramarginal           = c(2.345, 2.338),
-  frontalpole             = c(2.425, 2.001),
-  temporalpole            = c(3.469, 3.121),
-  transversetemporal      = c(2.360, 2.641),
-  insula                  = c(2.961, 2.731)
+                       ## of the FS 6.0 reprocessing (subject brain-fs6)
+  bankssts                = c(2.390, 2.554),
+  caudalanteriorcingulate = c(2.794, 2.488),
+  caudalmiddlefrontal     = c(2.483, 2.423),
+  cuneus                  = c(1.903, 1.905),
+  entorhinal              = c(3.150, 3.283),
+  fusiform                = c(2.744, 2.746),
+  inferiorparietal        = c(2.402, 2.425),
+  inferiortemporal        = c(2.774, 2.772),
+  isthmuscingulate        = c(2.306, 2.219),
+  lateraloccipital        = c(2.222, 2.279),
+  lateralorbitofrontal    = c(2.586, 2.200),
+  lingual                 = c(2.001, 1.993),
+  medialorbitofrontal     = c(2.409, 2.297),
+  middletemporal          = c(2.936, 2.818),
+  parahippocampal         = c(2.742, 2.600),
+  paracentral             = c(2.337, 2.404),
+  parsopercularis         = c(2.749, 2.541),
+  parsorbitalis           = c(2.683, 2.482),
+  parstriangularis        = c(2.575, 2.347),
+  pericalcarine           = c(1.603, 1.652),
+  postcentral             = c(2.155, 2.029),
+  posteriorcingulate      = c(2.547, 2.523),
+  precentral              = c(2.609, 2.479),
+  precuneus               = c(2.403, 2.345),
+  rostralanteriorcingulate= c(3.011, 2.671),
+  rostralmiddlefrontal    = c(2.405, 2.147),
+  superiorfrontal         = c(2.651, 2.506),
+  superiorparietal        = c(2.143, 2.079),
+  superiortemporal        = c(2.938, 2.853),
+  supramarginal           = c(2.369, 2.403),
+  frontalpole             = c(2.550, 1.889),
+  temporalpole            = c(3.258, 3.174),
+  transversetemporal      = c(2.425, 2.575),
+  insula                  = c(2.909, 3.044)
 )
 for (key in names(CORTEX_VALS)) {
   f <- sprintf("FIT_CT_%s.rds", key)
