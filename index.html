@@ -233,15 +233,20 @@
           <span class="status" id="rp-status"></span>
         </div>
         <div class="viewer-caption">
-          Volumes: defaced T1 (<code>t1.nii.gz</code>) + <code>aparc+aseg.nii.gz</code>
-          rendered with NiiVue's <code>freesurfer</code> colormap. Surfaces (off by
-          default — enable in the mesh tab of the layers panel):
-          <code>lh/rh.pial.mz3</code> and <code>lh/rh.white.mz3</code>, converted from
-          FreeSurfer's native meshes with <code>convert_surfaces.py</code>; region
-          colors come from <code>aparc.annot</code>. The region picker recolors the
-          same meshes per-vertex using the parcellation in
-          <code>data/{lh,rh}.labels.json.gz</code> (<code>region-picker.js</code>);
-          selected view is reflected in the URL fragment, shareable as a link.
+          Volumes: defaced T1 (<code>t1-upright.nii.gz</code>) +
+          <code>aparc+aseg-upright.nii.gz</code> rendered with NiiVue's
+          <code>freesurfer</code> colormap. Both are resampled into FreeSurfer's
+          Talairach (atlas) space with <code>make_upright.py</code> — my scan was
+          acquired at a ~2–3° tilt, and the upright copy makes the A/P/S slice
+          views anatomical. Surfaces (off by default — enable in the mesh tab of
+          the layers panel): <code>lh/rh.pial-upright.mz3</code> and
+          <code>lh/rh.white-upright.mz3</code>, the FreeSurfer surface meshes
+          moved into the same space (same vertices, so region colors from
+          <code>aparc.annot</code> and the parcellation in
+          <code>data/{lh,rh}.labels.json.gz</code> apply unchanged; see
+          <code>convert_surfaces.py</code> and <code>region-picker.js</code>).
+          The region picker recolors the meshes per-vertex; selected view is
+          reflected in the URL fragment, shareable as a link.
         </div>
       </div>
 

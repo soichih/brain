@@ -114,9 +114,9 @@
     var n = labels.length;
     var rgba = new Uint8Array(n * 4);
     for (var i = 0; i < n; i++) {
-      var c = ctab[labels[i]];
+      var c = ctab[labels[i]];  // annot can carry -1 (medial wall): no ctab entry
       var o = i * 4;
-      if (labels[i] === 0) {
+      if (labels[i] === 0 || !c) {
         rgba[o] = 150; rgba[o + 1] = 150; rgba[o + 2] = 150;
       } else {
         rgba[o] = c[0]; rgba[o + 1] = c[1]; rgba[o + 2] = c[2];
@@ -249,6 +249,7 @@
       });
       updateStatus(shownVerts);
     }).catch(function (e) {
+      if (console.error) console.error("region-picker:", e && e.stack || e);
       ui.status.textContent = "Could not load parcellation data: " + e;
     });
   }

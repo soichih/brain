@@ -2,15 +2,15 @@
   "title": "My Brain — T1 + FreeSurfer aparc+aseg",
   "imageOptionsArray": [
     {
-      "url": "t1.nii.gz",
-      "name": "t1.nii.gz",
+      "url": "t1-upright.nii.gz",
+      "name": "Talairach-aligned t1.nii.gz",
       "colormap": "gray",
       "visible": true,
       "opacity": 1
     },
     {
-      "url": "aparc+aseg.nii.gz",
-      "name": "aparc+aseg.nii.gz",
+      "url": "aparc+aseg-upright.nii.gz",
+      "name": "Talairach-aligned aparc+aseg.nii.gz",
       "colormap": "freesurfer",
       "visible": true,
       "opacity": 0.6
@@ -18,25 +18,25 @@
   ],
   "meshes": [
     {
-      "url": "lh.pial.mz3",
+      "url": "lh.pial-upright.mz3",
       "name": "left pial (aparc).mz3",
       "opacity": 1.0,
       "visible": false
     },
     {
-      "url": "rh.pial.mz3",
+      "url": "rh.pial-upright.mz3",
       "name": "right pial (aparc).mz3",
       "opacity": 1.0,
       "visible": false
     },
     {
-      "url": "lh.white.mz3",
+      "url": "lh.white-upright.mz3",
       "name": "left white (aparc).mz3",
       "opacity": 0.5,
       "visible": false
     },
     {
-      "url": "rh.white.mz3",
+      "url": "rh.white-upright.mz3",
       "name": "right white (aparc).mz3",
       "opacity": 0.5,
       "visible": false

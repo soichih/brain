@@ -60,9 +60,11 @@ def build(subject_dir, out_dir, hemi, surf):
     labels, ctab, names = read_annot(f"{subject_dir}/label/{hemi}.aparc.annot")
     ctab = ctab[:, :4]  # some annot color tables carry a 5th (id) column
 
-    rgba = ctab[labels]  # (n,4) uint8
+    # the annot carries -1 (medial wall vertices): clip before indexing so
+    # numpy's negative wrap doesn't paint them with ctab[-1]'s color
+    rgba = ctab[np.clip(labels, 0, None)]  # (n,4) uint8
     # unknown (label 0) -> light gray, keep some visibility
-    rgba[labels == 0] = np.array([150, 150, 150, 255], dtype=np.uint8)
+    rgba[labels <= 0] = np.array([150, 150, 150, 255], dtype=np.uint8)
 
     write_mz3(f"{out_dir}/{hemi}.{surf}.mz3", verts, faces.astype(np.uint32), rgba)
     n_unknown = (labels == 0).sum()
