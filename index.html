@@ -115,6 +115,32 @@
         border-top: 1px solid var(--border); background: var(--surface);
       }
 
+      /* ---- region picker ---- */
+      .rp {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+        padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface);
+        font-size: 12.5px;
+      }
+      .rp label { color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+      .rp select {
+        font: inherit; color: var(--ink); background: var(--page);
+        border: 1px solid var(--baseline); border-radius: 6px; padding: 4px 8px;
+      }
+      .rp .seg { display: inline-flex; border: 1px solid var(--baseline); border-radius: 6px; overflow: hidden; }
+      .rp .seg button {
+        font: inherit; border: 0; background: transparent; color: var(--ink-2);
+        padding: 4px 10px; cursor: pointer; border-left: 1px solid var(--grid);
+      }
+      .rp .seg button:first-child { border-left: 0; }
+      .rp .seg button:hover { background: var(--band); }
+      .rp .seg button.active { background: var(--bandin); color: var(--ink); font-weight: 500; }
+      .rp button.reset {
+        font: inherit; background: transparent; color: var(--s1); cursor: pointer;
+        border: 1px solid var(--baseline); border-radius: 6px; padding: 4px 10px;
+      }
+      .rp button.reset:hover { background: var(--band); }
+      .rp .status { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
       /* ---- charts ---- */
       figure { margin: 0 0 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
       figcaption h3 { margin: 0 0 2px; font-size: 14.5px; }
@@ -177,17 +203,45 @@
         adjustable from FreeBrowse's layers panel. The same scene also carries the
         parcellated white/pial surface meshes recon-all fitted (hidden by default):
         use the tabs in the panel at the right to switch between the volume layers
-        and the surface meshes, and the eye icons to toggle individual layers.
+        and the surface meshes, and the eye icons to toggle individual layers. Or use
+        the <em>Region</em> picker below the viewer to light up a single cortical
+        region against the rest of the surface — e.g. <code>Frontalpole</code>.
       </p>
       <div class="viewer-card">
-        <iframe src="freebrowse.html?nvd=mri-view.nvd" title="FreeBrowse viewer" loading="lazy"></iframe>
+        <iframe id="viewer-frame" src="freebrowse.html?nvd=mri-view.nvd" title="FreeBrowse viewer" loading="lazy"></iframe>
+        <div class="rp" id="region-picker">
+          <label>Region
+            <select id="rp-region"><option value="">— pick a cortical region —</option></select>
+          </label>
+          <span class="label" style="color:var(--ink-2)">Hemisphere</span>
+          <span class="seg" role="group" aria-label="Hemisphere">
+            <button id="rp-hemi-l" type="button">Left</button>
+            <button id="rp-hemi-r" type="button">Right</button>
+            <button id="rp-hemi-both" type="button">Both</button>
+          </span>
+          <span class="label" style="color:var(--ink-2)">Surface</span>
+          <span class="seg" role="group" aria-label="Surface">
+            <button id="rp-surf-pial" type="button">Pial</button>
+            <button id="rp-surf-white" type="button">White</button>
+          </span>
+          <span class="label" style="color:var(--ink-2)">Other regions</span>
+          <span class="seg" role="group" aria-label="Context mode">
+            <button id="rp-mode-ghost" type="button">Ghost</button>
+            <button id="rp-mode-isolate" type="button">Isolate</button>
+          </span>
+          <button id="rp-reset" class="reset" type="button">Show all regions</button>
+          <span class="status" id="rp-status"></span>
+        </div>
         <div class="viewer-caption">
           Volumes: defaced T1 (<code>t1.nii.gz</code>) + <code>aparc+aseg.nii.gz</code>
           rendered with NiiVue's <code>freesurfer</code> colormap. Surfaces (off by
           default — enable in the mesh tab of the layers panel):
           <code>lh/rh.pial.mz3</code> and <code>lh/rh.white.mz3</code>, converted from
           FreeSurfer's native meshes with <code>convert_surfaces.py</code>; region
-          colors come from <code>aparc.annot</code>.
+          colors come from <code>aparc.annot</code>. The region picker recolors the
+          same meshes per-vertex using the parcellation in
+          <code>data/{lh,rh}.labels.json.gz</code> (<code>region-picker.js</code>);
+          selected view is reflected in the URL fragment, shareable as a link.
         </div>
       </div>
 
@@ -380,6 +434,7 @@
     </div>
 
     <script type="text/javascript" src="data/brain-norms.js"></script>
+    <script type="text/javascript" src="region-picker.js"></script>
     <script type="text/javascript" src="charts.js"></script>
   </body>
 </html>

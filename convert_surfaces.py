@@ -19,6 +19,27 @@ from nibabel.freesurfer import read_annot, read_geometry
 ATTR_FACE, ATTR_VERT, ATTR_RGBA = 1, 2, 4
 
 
+def write_labels(path, labels, ctab, names):
+    """Per-vertex region index + annot metadata, for the page's region picker.
+
+    FreeSurfer's lh/rh.white and lh/rh.pial share identical vertex topology
+    (same count and ordering), so one array per hemisphere covers all four
+    meshes. names/namespaces come from aparc.annot, e.g. 'ctx-lh-bankssts'.
+    """
+    import json
+
+    payload = {
+        "names": [n.decode() if isinstance(n, bytes) else n for n in names],
+        "labels": labels.astype(int).tolist(),
+        "ctab": ctab.astype(int).tolist(),
+        "surface": "aparc.annot",  # parcellation the labels index into
+    }
+    data = json.dumps(payload, separators=(",", ":")).encode()
+    with gzip.open(path, "wb") as f:
+        f.write(data)
+    print("wrote", path, f"({len(data)/1e6:.1f} MB json)")
+
+
 def write_mz3(path, verts, faces, rgba):
     """verts float32 (n,3) mm, faces uint32 (m,3) 0-based, rgba uint8 (n,4)."""
     nvert, nface = len(verts), len(faces)
@@ -53,6 +74,9 @@ def main(src, out_dir):
     for hemi in ("lh", "rh"):
         for surf in ("pial", "white"):
             build(src, out_dir, hemi, surf)
+        # label bookkeeping once per hemisphere (white/pial share topology)
+        labels, ctab, names = read_annot(f"{src}/label/{hemi}.aparc.annot")
+        write_labels(f"{out_dir}/{hemi}.labels.json.gz", labels, ctab[:, :4], names)
 
 
 if __name__ == "__main__":
