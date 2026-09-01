@@ -10,7 +10,7 @@ registration, taken from mri/transforms/talairach.lta, which is stored as a
 voxel-to-voxel mapping (nu.mgz -> atlas gca template) together with both
 volumes' full geometry — no coordinate-convention guesswork.
 
-Outputs (1mm, 256^3, axes = atlas RAS):
+Outputs (1mm, 256^3, axes = R/A/S, world = atlas RAS mm):
   t1-upright.nii.gz            trilinear-resampled conformed T1 (uint8)
   aparc+aseg-upright.nii.gz    nearest-neighbor label map (int16)
   {lh,rh}.{pial,white}-upright.mz3
@@ -76,7 +76,7 @@ def set_affine(img, A):
 
 
 OUT_AFF = np.eye(4)
-OUT_AFF[:3, 3] = -np.array(SHAPE) / 2  # upright world = atlas voxel - 128
+OUT_AFF[:3, 3] = -np.array(SHAPE) / 2  # upright world = voxel - 128 (R/A/S axes)
 
 
 def convert_volumes(subject_dir, out_dir, M, A_src, A_dst):
@@ -84,11 +84,15 @@ def convert_volumes(subject_dir, out_dir, M, A_src, A_dst):
     assert np.allclose(A_src, nib.load(f"{subject_dir}/mri/orig.mgz").affine, atol=0.6), \
         "lta src geometry does not match orig.mgz"
     from scipy.ndimage import map_coordinates
-    # output voxel grid; a voxel d in the upright volume is dst_vox d, whose
-    # source voxel is inv(M) @ d (M maps src voxel -> dst voxel)
-    inv_M = np.linalg.inv(M)[:3, :3], np.linalg.inv(M)[:3, 3]
+    # The atlas gca is an LIA grid (axis0 = Left, axis1 = Inferior, axis2 =
+    # Anterior per its xras/yras/zras), NOT R/A/S — every mapping must go
+    # through the lta's dst geometry A_dst (dst_vox -> atlas RAS mm):
+    #   world = A_dst @ (M @ src_vox) = OUT_AFF @ d
+    # so src_vox = inv(M) @ inv(A_dst) @ OUT_AFF @ d. Skipping inv(A_dst)
+    # renders the axial plane with coronal anatomy and vice versa.
+    W = np.linalg.inv(M) @ np.linalg.inv(A_dst) @ OUT_AFF
     idx = np.indices(SHAPE, dtype=np.float64).reshape(3, -1)
-    src_vox = inv_M[0] @ idx + inv_M[1][:, None]
+    src_vox = W[:3, :3] @ idx + W[:3, 3][:, None]
     for rel, out, order in (("mri/orig.mgz", "t1-upright.nii.gz", 1),
                             ("mri/aparc+aseg.mgz", "aparc+aseg-upright.nii.gz", 0)):
         src = np.asarray(nib.load(f"{subject_dir}/{rel}").dataobj)
@@ -107,9 +111,9 @@ def convert_volumes(subject_dir, out_dir, M, A_src, A_dst):
 def convert_meshes(subject_dir, out_dir, M, A_src, A_dst):
     # surface tkrRAS +cras -> scanner RAS -> orig voxel (orig.mgz's own affine,
     # ground-truth-verified against aparc+aseg labels) -> atlas voxel (lta M)
-    # -> upright world (OUT_AFF)
+    # -> atlas RAS mm (the dst geometry), which is the upright volume's world
     A_orig = nib.load(f"{subject_dir}/mri/orig.mgz").affine
-    T = OUT_AFF @ M @ np.linalg.inv(A_orig)
+    T = A_dst @ M @ np.linalg.inv(A_orig)
     for hemi in ("lh", "rh"):
         labels, ctab, _ = read_annot(f"{subject_dir}/label/{hemi}.aparc.annot")
         ctab = ctab[:, :4]
