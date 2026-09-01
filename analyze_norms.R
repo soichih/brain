@@ -49,7 +49,9 @@ USER <- list(
 
 
 ## ---- helpers ----
-AGE_DAYS <- 365 * 48
+## The scan was acquired at age 41 (DICOM PatientAge), so the population
+## reference is evaluated there, and the charts' "you" marker sits at x = 41.
+AGE_DAYS <- 365 * 41
 newgrid <- function(extra = list()) {
   g <- do.call(expand.grid, c(list(AgeTransformed = log(AGE_DAYS),
                                    sex = factor("Male", levels = c("Female","Male"))), extra))
@@ -84,7 +86,7 @@ curves.of <- function(fitfile, ages = seq(20, 80, by = 1)) {
        hiin = R$PRED.u750.pop, hi  = R$PRED.u975.pop)
 }
 
-OUT <- list(meta = list(age = 48, sex = "male", family = "GGalt",
+OUT <- list(meta = list(age = 41, sex = "male", family = "GGalt",
              source = "Bethlehem et al. 2022 Nature brain-charts (FS-harmonized to FS6)"),
        composition = list(), global = list(), subcortical = list())
 
@@ -198,17 +200,17 @@ for (key in names(CORTEX_VALS)) {
     cv <- curves.of(f)
     med0 <- cv$med[1]
     scale <- if (med0 * 10000 > 1.2 && med0 * 10000 < 4) 10000 else 1
-    ## keep only the population band at age 48 (i48 = index of 48 in seq(20,80))
-    i48 <- 48 - 20 + 1
+    ## keep only the population band at the scan's age (iage = index in seq(20,80))
+    iage <- OUT$meta$age - 20 + 1
     pl <- pct.of(f, CORTEX_VALS[[key]][1] / scale)
     pr <- pct.of(f, CORTEX_VALS[[key]][2] / scale)
     list(l  = list(user = CORTEX_VALS[[key]][1], pct = pl$pct * 100),
          r  = list(user = CORTEX_VALS[[key]][2], pct = pr$pct * 100),
          median = round(pl$median * scale, 3),
-         lo   = round(cv$lo[i48]   * scale, 3),
-         lin  = round(cv$lin[i48]  * scale, 3),
-         hiin = round(cv$hiin[i48] * scale, 3),
-         hi   = round(cv$hi[i48]   * scale, 3))
+         lo   = round(cv$lo[iage]   * scale, 3),
+         lin  = round(cv$lin[iage]  * scale, 3),
+         hiin = round(cv$hiin[iage] * scale, 3),
+         hi   = round(cv$hi[iage]   * scale, 3))
   }, error = function(e) { cat(key, "ERR:", conditionMessage(e), "\n"); NULL })
   if (!is.null(res)) {
     OUT$cortex[[key]] <- res

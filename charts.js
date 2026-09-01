@@ -377,7 +377,7 @@
       var n = N.cortex[k];
       var name = REGION_NAMES[k] || k;
       var yc = top + i * rowH + (rowH - 12) / 2;
-      var tip = name + " (population, 48-year-old male)\n" +
+      var tip = name + " (population, " + N.meta.age + "-year-old " + N.meta.sex + ")\n" +
         "band 2.5–97.5: " + n.lo.toFixed(2) + "–" + n.hi.toFixed(2) + " mm · median " + n.median.toFixed(2) + " mm\n" +
         "me, left: " + n.l.user.toFixed(2) + " mm — " + percentiles(n.l.pct).label +
         "\nme, right: " + n.r.user.toFixed(2) + " mm — " + percentiles(n.r.pct).label;
@@ -458,7 +458,7 @@
 
       function poly(aCol, bCol, fill) {
         var d = "M";
-        aCol.forEach(function (v, i) { d += X(n.ages[i]) + " " + Y(v) + (i ? " L" : " "); });
+        aCol.forEach(function (v, i) { d += X(n.ages[i]) + " " + Y(v) + (i && i < aCol.length - 1 ? " L" : " "); });
         for (var i2 = bCol.length - 1; i2 >= 0; i2--) { d += " L" + X(n.ages[i2]) + " " + Y(bCol[i2]); }
         return svg("path", { d: d + " z", fill: fill });
       }

@@ -63,7 +63,7 @@ analysis of the same volume.
   pipeline-version effect)
 - `data/brain-norms.js` — population reference data: centile curves and the
   percentile of each measure against the lifespan brain-charts normative models
-  (Bethlehem et al. 2022, Nature), stratified for age 48 / male. Percentile
+  (Bethlehem et al. 2022, Nature), stratified for age 41 / male. Percentile
   inputs come from the FS 6.0 re-processing (matching the reference pipeline);
   descriptive charts use the FS 8.2 stats
 - `analyze_norms.R` — regenerates `data/brain-norms.js` from the
