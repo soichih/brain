@@ -287,7 +287,12 @@
           <em>re-processing of this same scan with FreeSurfer&nbsp;6.0</em> (not the 8.2 headline
           numbers elsewhere on the page; see <em>How this was made</em>). The charts also model age
           and sex only — percentile positions near the middle of the band mean little, and this is
-          not a clinical assessment.
+          not a clinical assessment. And no centile here is a stable property of this scan: a
+          further full re-run of the same pipeline on the same data, only re-oriented
+          (Talairach-upright) before processing, moved the volume centiles by tens of points
+          (gray matter 17th→60th, white matter 51st→96th, head size 70th↔1st) while mean cortical
+          thickness stayed put (1.9th→4.5th) — treat the volume centiles as bands with
+          ±tens-of-points uncertainty, not points.
         </p>
       </figure>
 
@@ -427,6 +432,26 @@
           runs side by side against the same bands; on this scan, switching pipeline version
           accounts for the subcortical percentile differences but shifts mean cortical thickness
           by only ~0.04&nbsp;mm.
+        </p>
+        <p>
+          <strong>Rerun experiment.</strong> To test whether the scan's oblique acquisition
+          orientation affected the measurements, the entire pipeline was re-run (FS&nbsp;6.0,
+          subject <code>brain-upright</code>) on a Talairach-upright resample of the same scan.
+          <code>recon-all</code> re-orients every input to a canonical grid before measuring, so
+          the tilt itself never reached the segmentation — and the two runs on the original
+          orientation (FS&nbsp;6.0 and FS&nbsp;8.2) agree on raw volumes to within ~2%. The
+          re-oriented re-run did <em>not</em> reproduce the original-orientation numbers: surface
+          area +10%, volumes +11–20%, thickness +1.6%, eTIV +18% — not a correction, but the
+          pipeline settling ~1&nbsp;voxel differently on every tissue boundary when its
+          registration starting point moves (a 1-voxel uniform boundary shift is worth ~18% of
+          brain volume; the same effect was measured directly at Dice&nbsp;0.935 with a uniform
+          1–2-voxel mask shell on a defaced-vs-original rerun). Re-scored against the population
+          model, the re-run's centiles swing wildly (gray matter 17th→60th, white matter
+          51st→96th, surface area 71st→96th, head size 70th↔1st) — except thickness
+          (1.9th→4.5th), which is therefore the least pipeline-sensitive measure on the page and
+          still sits in the bottom 5%. The re-run's atlas calibration is also visibly broken —
+          its eTIV (1.27&nbsp;L) is smaller than the brain it segmented (1.40&nbsp;L) — so its
+          numbers were <em>not</em> adopted here; the published FS&nbsp;8.2 values stand.
         </p>
       </div>
 
